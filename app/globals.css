@@ -148,6 +148,10 @@ body {
   }
 }
 
+/* ── Esconde scrollbar do sidebar ── */
+aside::-webkit-scrollbar { display: none; }
+aside { scrollbar-width: none; -ms-overflow-style: none; }
+
 /* ── Layout responsivo ── */
 .dashboard-content {
   flex: 1;
