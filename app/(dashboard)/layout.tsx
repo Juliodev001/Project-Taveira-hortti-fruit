@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f0f2f8' }}>
       <Sidebar
         userEmail={session.email}
-        userName={session.name}
+        userName={session.name ?? undefined}
         userRole={session.role}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
