@@ -317,7 +317,7 @@ function AnimatedNumber({ value, color }: { value: number; color: string }) {
   }, [inView, value, spring])
 
   return (
-    <motion.span ref={ref} style={{ color, fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>
+    <motion.span ref={ref} style={{ color, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 800, letterSpacing: -0.5 }}>
       {display}
     </motion.span>
   )
@@ -432,9 +432,9 @@ export default function DashboardClient({ data }: { data: DashData }) {
         initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, type: 'spring', stiffness: 200 }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: NAVY, margin: 0, letterSpacing: -0.5 }}>Dashboard</h1>
+            <h1 className="page-title" style={{ fontSize: 28, fontWeight: 800, color: NAVY, margin: 0, letterSpacing: -0.5 }}>Dashboard</h1>
             <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>Visão geral do negócio</p>
           </div>
         </div>
@@ -545,7 +545,7 @@ export default function DashboardClient({ data }: { data: DashData }) {
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: NAVY }}>Previsão de Caixa</h3>
           <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 4 }}>baseado em vencimentos</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <div className="stats-grid-3" style={{ gap: 12 }}>
           {[
             { label: '7 dias', entrada: data.contasAReceber.em7, saida: data.contasAPagar.em7 },
             { label: '15 dias', entrada: data.contasAReceber.em15, saida: data.contasAPagar.em15 },

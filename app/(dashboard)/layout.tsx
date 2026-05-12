@@ -13,14 +13,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userName={session.name ?? undefined}
         userRole={session.role}
       />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <main style={{
-          flex: 1,
-          padding: '28px 32px',
-          overflowY: 'auto',
-          maxWidth: 1400,
-          width: '100%',
-        }}>
+      <div className="dashboard-content">
+        <main className="dashboard-main">
           {children}
         </main>
       </div>
