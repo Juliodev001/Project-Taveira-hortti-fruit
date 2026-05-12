@@ -148,9 +148,11 @@ body {
   }
 }
 
-/* ── Esconde scrollbar do sidebar ── */
-.sidebar-scroll::-webkit-scrollbar { display: none; }
-.sidebar-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+/* ── Esconde scrollbar do sidebar e filhos ── */
+.sidebar-scroll::-webkit-scrollbar,
+.sidebar-scroll *::-webkit-scrollbar { display: none; }
+.sidebar-scroll,
+.sidebar-scroll * { scrollbar-width: none; -ms-overflow-style: none; }
 
 /* ── Layout responsivo ── */
 .dashboard-content {
