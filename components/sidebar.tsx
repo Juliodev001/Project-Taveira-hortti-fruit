@@ -466,6 +466,7 @@ export default function Sidebar({ userEmail, userName, userRole }: {
 
       {/* Sidebar */}
       <motion.aside
+        className="sidebar-scroll"
         animate={isMobile ? { x: mobileOpen ? 0 : -270 } : { x: 0, opacity: 1 }}
         initial={isMobile ? { x: -270 } : { x: -270, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 30 }}
