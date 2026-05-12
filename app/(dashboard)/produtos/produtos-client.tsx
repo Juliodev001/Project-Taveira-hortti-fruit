@@ -20,7 +20,7 @@ const iconesPorNome: Record<string, string> = {
   maçã: '🍎', banana: '🍌', laranja: '🍊', uva: '🍇', melão: '🍈',
   melancia: '🍉', manga: '🥭', abacaxi: '🍍', mamão: '🍑', goiaba: '🍈',
   limão: '🍋', maracujá: '🌸', caju: '🍑', acerola: '🍒', jabuticaba: '🫐',
-  feijão: '🫘', soja: '🌿', arroz: '🌾', trigo: '🌾', milho: '🌽',
+  feijão: '🫘', soja: '🌿', arroz: '🌾', trigo: '🌾',
 }
 
 const iconesPorCategoria: Record<string, string> = {
