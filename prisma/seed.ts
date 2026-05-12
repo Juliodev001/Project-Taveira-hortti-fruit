@@ -10,7 +10,7 @@ const prisma = new PrismaClient({ adapter })
 
 async function main() {
   // User admin
-  const hashed = await bcrypt.hash('margem123', 10)
+  const hashed = await bcrypt.hash('docampo2026', 10)
   await prisma.user.upsert({
     where: { email: 'admin@docampo.com.br' },
     update: {},
@@ -57,7 +57,7 @@ async function main() {
 
   console.log('✅ Seed concluído!')
   console.log('   Login: admin@docampo.com.br')
-  console.log('   Senha: margem123')
+  console.log('   Senha: docampo2026')
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())
