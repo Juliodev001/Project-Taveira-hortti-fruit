@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { motion } from 'motion/react'
 import { DollarSign, Clock, CreditCard, AlertTriangle, Plus, Search, Upload } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import PageSkeleton from '@/components/page-skeleton'
@@ -17,15 +16,18 @@ type Compra = {
   fornecedor: { nome: string }; itens: { produto: string }[]
 }
 
-const statusLabel: Record<string, { label: string; color: string; bg: string }> = {
-  PAGO: { label: 'Pago', color: 'white', bg: GREEN },
-  A_PAGAR: { label: 'A Pagar', color: ORANGE, bg: '#fff7ed' },
-  VENCIDO: { label: 'Vencido', color: 'white', bg: PINK },
+const statusConfig: Record<string, { label: string; badgeStyle: React.CSSProperties }> = {
+  PAGO:    { label: 'Pago',    badgeStyle: { backgroundColor: '#E6F4E5', color: '#2d7d28' } },
+  A_PAGAR: { label: 'A Pagar', badgeStyle: { backgroundColor: '#FFF3E0', color: '#b85c00' } },
+  VENCIDO: { label: 'Vencido', badgeStyle: { backgroundColor: '#FDECEA', color: '#c0113a' } },
 }
 
 const categoriaLabel: Record<string, string> = {
-  MATERIA_PRIMA: 'Matéria Prima', INSUMO: 'Insumo',
-  DESPESA_OPERACIONAL: 'Desp. Operacional', DESPESA_ADMINISTRATIVA: 'Desp. Administrativa', OUTROS: 'Outros',
+  MATERIA_PRIMA: 'Matéria Prima',
+  INSUMO: 'Insumo',
+  DESPESA_OPERACIONAL: 'Desp. Operacional',
+  DESPESA_ADMINISTRATIVA: 'Desp. Administrativa',
+  OUTROS: 'Outros',
 }
 
 export default function ComprasClient() {
@@ -61,127 +63,154 @@ export default function ComprasClient() {
     return matchQ && matchStatus
   })
 
+  const listaExibida = aba === 'contas'
+    ? filtradas.filter((c) => c.status !== 'PAGO')
+    : filtradas
+
   return (
     <div>
-      <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+      {/* Page header */}
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: NAVY, margin: 0 }}>Compras e Despesas</h1>
-          <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>Controle de compras, despesas e contas a pagar</p>
+          <h1 className="page-title">Compras e Despesas</h1>
+          <p className="page-subtitle">Controle de compras, despesas e contas a pagar</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: '#f9fafb' }} whileTap={{ scale: 0.97 }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', cursor: 'pointer', fontSize: 13, color: NAVY, fontWeight: 500 }}
-          >
-            <Upload size={15} /> Importar XML
-          </motion.button>
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-            <Link href="/compras/nova" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', backgroundColor: GREEN, color: 'white', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
-              <Plus size={15} /> Nova Compra
-            </Link>
-          </motion.div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-secondary" style={{ fontSize: 13, padding: '7px 14px' }}>
+            <Upload size={14} /> Importar XML
+          </button>
+          <Link href="/compras/nova" className="btn-primary" style={{ fontSize: 13, padding: '7px 14px' }}>
+            <Plus size={14} /> Nova Compra
+          </Link>
         </div>
-      </motion.div>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      {/* Stat cards */}
+      <div className="stats-grid" style={{ marginBottom: 16 }}>
         {[
           { label: 'Total no Período', value: totalPeriodo, icon: DollarSign, color: NAVY },
           { label: 'A Pagar', value: aPagar, icon: Clock, color: ORANGE },
           { label: 'Pago', value: pago, icon: CreditCard, color: GREEN },
           { label: 'Vencido', value: vencido, icon: AlertTriangle, color: PINK },
-        ].map(({ label, value, icon: Icon, color }, i) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07, type: 'spring', stiffness: 180 }}
-            whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(0,0,0,0.09)' }}
-            style={{ backgroundColor: 'white', borderRadius: 14, padding: '20px 22px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `4px solid ${color}` }}
-          >
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="meta-stat-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
             <div>
-              <p style={{ color: '#6b7280', fontSize: 12, margin: 0 }}>{label}</p>
-              <p style={{ color, fontSize: 20, fontWeight: 700, margin: '6px 0 0' }}>{formatCurrency(value)}</p>
+              <p className="meta-stat-label" style={{ marginBottom: 4 }}>{label}</p>
+              <p className="meta-stat-value" style={{ color, fontSize: 20 }}>{formatCurrency(value)}</p>
             </div>
-            <Icon size={20} color={color} />
-          </motion.div>
+            <div
+              className="meta-icon-wrap"
+              style={{ width: 36, height: 36, background: `${color}18`, borderRadius: 8, color }}
+            >
+              <Icon size={18} />
+            </div>
+          </div>
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-        style={{ backgroundColor: 'white', borderRadius: 12, padding: '16px 20px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', gap: 12, alignItems: 'center' }}
+      {/* Toolbar: busca + filtro */}
+      <div
+        className="meta-card"
+        style={{ padding: '12px 16px', marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center' }}
       >
         <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+          <Search
+            size={14}
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#8A8D91', pointerEvents: 'none' }}
+          />
           <input
-            value={q} onChange={(e) => setQ(e.target.value)}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por fornecedor ou descrição..."
-            style={{ width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9, border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            className="meta-input"
+            style={{ paddingLeft: 32 }}
           />
         </div>
-        <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)}
-          style={{ padding: '9px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, color: NAVY, outline: 'none', cursor: 'pointer' }}
+        <select
+          value={statusFiltro}
+          onChange={(e) => setStatusFiltro(e.target.value)}
+          className="meta-select"
+          style={{ minWidth: 150 }}
         >
           <option value="TODOS">Todos os status</option>
           <option value="A_PAGAR">A Pagar</option>
           <option value="PAGO">Pago</option>
           <option value="VENCIDO">Vencido</option>
         </select>
-      </motion.div>
+      </div>
 
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>
         {(['contas', 'registradas'] as const).map((t) => (
-          <motion.button key={t} onClick={() => setAba(t)}
-            whileHover={{ scale: 1.03, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, backgroundColor: aba === t ? NAVY : 'white', color: aba === t ? 'white' : '#6b7280', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            {t === 'contas' ? `Contas a Pagar (${filtradas.filter((c) => c.status !== 'PAGO').length})` : `Compras Registradas (${filtradas.length})`}
-          </motion.button>
+          <button
+            key={t}
+            onClick={() => setAba(t)}
+            style={{
+              padding: '7px 16px',
+              borderRadius: 6,
+              border: `1px solid ${aba === t ? NAVY : '#E4E6EB'}`,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: aba === t ? 600 : 400,
+              backgroundColor: aba === t ? NAVY : '#ffffff',
+              color: aba === t ? '#ffffff' : '#65676B',
+              transition: 'all 0.1s',
+              fontFamily: 'inherit',
+              boxShadow: aba === t ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
+            }}
+          >
+            {t === 'contas'
+              ? `Contas a Pagar (${filtradas.filter((c) => c.status !== 'PAGO').length})`
+              : `Compras Registradas (${filtradas.length})`}
+          </button>
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
-        style={{ backgroundColor: 'white', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}
-      >
-        {filtradas.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>
+      {/* Table */}
+      <div className="meta-card" style={{ overflow: 'hidden' }}>
+        {listaExibida.length === 0 ? (
+          <div style={{ padding: '40px 24px', textAlign: 'center', color: '#8A8D91', fontSize: 14 }}>
             Nenhuma {aba === 'contas' ? 'conta a pagar' : 'compra'} encontrada no período
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
-                {['Data', 'Fornecedor', 'Categoria', 'Vencimento', 'Total', 'Status'].map((h) => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtradas.map((c, i) => {
-                const st = statusLabel[c.status] ?? statusLabel.A_PAGAR
-                return (
-                  <motion.tr
-                    key={c.id}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    style={{ borderBottom: '1px solid #f9fafb', cursor: 'pointer' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: NAVY }}>{formatDate(c.data)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500, color: NAVY }}>{c.fornecedor.nome}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 12, color: '#6b7280' }}>{categoriaLabel[c.categoria] ?? c.categoria}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{formatDate(c.vencimento)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>{formatCurrency(c.totalValor)}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ backgroundColor: st.bg, color: st.color, padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{st.label}</span>
-                    </td>
-                  </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="table-wrapper">
+            <table className="meta-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Fornecedor</th>
+                  <th className="col-hide-mobile">Categoria</th>
+                  <th className="col-hide-mobile">Vencimento</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaExibida.map((c) => {
+                  const st = statusConfig[c.status] ?? statusConfig.A_PAGAR
+                  return (
+                    <tr
+                      key={c.id}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td style={{ color: '#65676B', fontWeight: 400 }}>{formatDate(c.data)}</td>
+                      <td style={{ fontWeight: 500, color: '#1C1E21' }}>{c.fornecedor.nome}</td>
+                      <td className="col-hide-mobile" style={{ color: '#65676B' }}>
+                        {categoriaLabel[c.categoria] ?? c.categoria}
+                      </td>
+                      <td className="col-hide-mobile" style={{ color: '#65676B' }}>{formatDate(c.vencimento)}</td>
+                      <td style={{ fontWeight: 600, color: '#1C1E21' }}>{formatCurrency(c.totalValor)}</td>
+                      <td>
+                        <span className="meta-badge" style={st.badgeStyle}>{st.label}</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }
