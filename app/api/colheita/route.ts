@@ -1,0 +1,91 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
+import { prisma } from '@/lib/prisma'
+import { getSession } from '@/lib/session'
+import { memCache } from '@/lib/mem-cache'
+
+export async function GET(req: NextRequest) {
+  const session = await getSession()
+  if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { searchParams } = new URL(req.url)
+  const produtoId = searchParams.get('produtoId')
+  const produtorId = searchParams.get('produtorId')
+  const inicio = searchParams.get('inicio')
+  const fim = searchParams.get('fim')
+
+  const cacheKey = `colheita:${produtoId}:${produtorId}:${inicio}:${fim}`
+  const colheitas = await memCache.fetch(
+    cacheKey,
+    () => prisma.colheitaDiaria.findMany({
+      where: {
+        ...(produtoId && { produtoId }),
+        ...(produtorId && { produtorId }),
+        ...(inicio && fim && { data: { gte: new Date(inicio), lte: new Date(fim) } }),
+      },
+      include: {
+        produto: true,
+        produtor: { include: { parceiros: true } },
+        responsavel: { select: { id: true, name: true, role: true } },
+      },
+      orderBy: { data: 'desc' },
+    }),
+    30_000
+  )
+  return NextResponse.json(colheitas)
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getSession()
+  if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data, produtoId, produtorId, quantidadeTotal, observacao, preco, qualidade, descarte, nrDoc } = await req.json()
+  if (!produtoId || !quantidadeTotal) {
+    return NextResponse.json({ error: 'Produto e quantidade obrigatórios' }, { status: 400 })
+  }
+
+  // Calcula percentuais com base no produtor selecionado
+  let percParceiro = 0
+  if (produtorId) {
+    const produtor = await prisma.produtor.findUnique({
+      where: { id: produtorId },
+      include: { parceiros: true },
+    })
+    if (produtor) {
+      percParceiro = produtor.parceiros.reduce((s, p) => s + p.percentual, 0)
+    }
+  }
+  const percDono = 100 - percParceiro
+
+  try {
+    const colheita = await prisma.colheitaDiaria.create({
+      data: {
+        data: new Date(data),
+        produtoId,
+        produtorId: produtorId || null,
+        percDono,
+        percParceiro,
+        quantidadeTotal,
+        quantidadeDono: quantidadeTotal * (percDono / 100),
+        quantidadeParceiro: quantidadeTotal * (percParceiro / 100),
+        preco: preco ?? 0,
+        qualidade: qualidade || null,
+        descarte: descarte ?? 0,
+        nrDoc: nrDoc || null,
+        responsavelId: session.userId,
+        observacao: observacao || null,
+      },
+      include: {
+        produto: true,
+        produtor: { include: { parceiros: true } },
+        responsavel: { select: { id: true, name: true, role: true } },
+      },
+    })
+    revalidateTag('lavoura', 'max')
+    memCache.invalidate('colheita')
+    return NextResponse.json(colheita, { status: 201 })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[POST /api/colheita]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}

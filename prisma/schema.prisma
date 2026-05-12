@@ -1,0 +1,367 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String           @id @default(cuid())
+  name      String
+  email     String           @unique
+  password  String
+  role      UserRole         @default(DONO)
+  ativo     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  colheitas ColheitaDiaria[]
+  saidas    SaidaLavoura[]
+}
+
+model Produto {
+  id        String           @id @default(cuid())
+  nome      String
+  unidade   UnidadeMedida    @default(CAIXA)
+  categoria String?
+  ativo     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  colheitas ColheitaDiaria[]
+  saidas    SaidaLavoura[]
+}
+
+model ColheitaDiaria {
+  id                 String    @id @default(cuid())
+  data               DateTime
+  produtoId          String
+  produto            Produto   @relation(fields: [produtoId], references: [id])
+  produtorId         String?
+  produtor           Produtor? @relation(fields: [produtorId], references: [id])
+  percDono           Float     @default(60)
+  percParceiro       Float     @default(40)
+  quantidadeTotal    Float
+  quantidadeDono     Float
+  quantidadeParceiro Float
+  preco              Float     @default(0)
+  qualidade          String?
+  descarte           Float     @default(0)
+  nrDoc              String?
+  responsavelId      String
+  responsavel        User      @relation(fields: [responsavelId], references: [id])
+  observacao         String?
+  createdAt          DateTime  @default(now())
+}
+
+model SaidaLavoura {
+  id            String   @id @default(cuid())
+  data          DateTime
+  produtoId     String
+  produto       Produto  @relation(fields: [produtoId], references: [id])
+  quantidade    Float
+  valorUnit     Float
+  totalValor    Float
+  responsavelId String
+  responsavel   User     @relation(fields: [responsavelId], references: [id])
+  observacao    String?
+  createdAt     DateTime @default(now())
+}
+
+model CentroCusto {
+  id      String   @id @default(cuid())
+  nome    String
+  compras Compra[]
+}
+
+model Fornecedor {
+  id       String       @id @default(cuid())
+  nome     String
+  cnpjCpf  String?
+  telefone String?
+  email    String?
+  createdAt DateTime    @default(now())
+  compras  Compra[]
+  nfes     NotaFiscal[]
+}
+
+model Compra {
+  id             String            @id @default(cuid())
+  data           DateTime
+  fornecedorId   String
+  fornecedor     Fornecedor        @relation(fields: [fornecedorId], references: [id])
+  categoria      CategoriaCompra   @default(MATERIA_PRIMA)
+  centroCustoId  String?
+  centroCusto    CentroCusto?      @relation(fields: [centroCustoId], references: [id])
+  observacao     String?
+  condicao       CondicaoPagamento @default(A_VISTA)
+  vencimento     DateTime
+  formaPagamento FormaPagamento    @default(PIX)
+  status         StatusPagamento   @default(A_PAGAR)
+  totalValor     Float             @default(0)
+  itens          ItemCompra[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model ItemCompra {
+  id         String        @id @default(cuid())
+  compraId   String
+  compra     Compra        @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  produto    String
+  unidade    UnidadeMedida @default(CAIXA)
+  quantidade Float
+  valorUnit  Float
+  total      Float
+}
+
+model RegistroProducao {
+  id         String            @id @default(cuid())
+  data       DateTime
+  descricao  String
+  observacao String?
+  status     StatusProducao    @default(RASCUNHO)
+  entradas   EntradaProducao[]
+  saidas     SaidaProducao[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model EntradaProducao {
+  id                 String           @id @default(cuid())
+  registroProducaoId String
+  registroProducao   RegistroProducao @relation(fields: [registroProducaoId], references: [id], onDelete: Cascade)
+  produto            String
+  unidade            UnidadeMedida    @default(CAIXA)
+  quantidade         Float
+  custoUnit          Float
+  total              Float
+}
+
+model SaidaProducao {
+  id                 String           @id @default(cuid())
+  registroProducaoId String
+  registroProducao   RegistroProducao @relation(fields: [registroProducaoId], references: [id], onDelete: Cascade)
+  produto            String
+  unidade            UnidadeMedida    @default(CAIXA)
+  quantidade         Float
+  custoUnit          Float
+  total              Float
+}
+
+model Produtor {
+  id          String                 @id @default(cuid())
+  nome        String
+  cpf         String                 @unique
+  telefone    String?
+  parceiros   Parceiro[]
+  colheitas   ColheitaDiaria[]
+  fechamentos FechamentoPagamento[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+}
+
+model FechamentoPagamento {
+  id                String   @id @default(cuid())
+  produtorId        String
+  produtor          Produtor @relation(fields: [produtorId], references: [id])
+  dataInicio        DateTime
+  dataFim           DateTime
+  dataPagamento     DateTime
+  valesEmbalagem    Float    @default(0)
+  valesDinheiro     Float    @default(0)
+  creditos          Float    @default(0)
+  debitosAnteriores Float    @default(0)
+  status            String   @default("PENDENTE")
+  createdAt         DateTime @default(now())
+}
+
+model Parceiro {
+  id         String   @id @default(cuid())
+  produtorId String
+  produtor   Produtor @relation(fields: [produtorId], references: [id], onDelete: Cascade)
+  nome       String
+  cpf        String
+  percentual Float
+  createdAt  DateTime @default(now())
+}
+
+model Cliente {
+  id         String       @id @default(cuid())
+  nome       String
+  cnpjCpf    String?
+  telefone   String?
+  email      String?
+  createdAt  DateTime     @default(now())
+  nfes       NotaFiscal[]
+  devolucoes Devolucao[]
+}
+
+model NotaFiscal {
+  id               String           @id @default(cuid())
+  numero           String?
+  serie            String?          @default("1")
+  clienteId        String
+  cliente          Cliente          @relation(fields: [clienteId], references: [id])
+  fornecedorId     String?
+  fornecedor       Fornecedor?      @relation(fields: [fornecedorId], references: [id])
+  dataEmissao      DateTime         @default(now())
+  dataVencimento   DateTime?
+  ambiente         AmbienteNF       @default(PRODUCAO)
+  status           StatusNF         @default(RASCUNHO)
+  chaveAcesso      String?
+  totalValor       Float            @default(0)
+  itens            ItemNF[]
+  statusFinanceiro StatusFinanceiro @default(A_RECEBER)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model ItemNF {
+  id           String        @id @default(cuid())
+  notaFiscalId String
+  notaFiscal   NotaFiscal    @relation(fields: [notaFiscalId], references: [id], onDelete: Cascade)
+  produto      String
+  unidade      UnidadeMedida @default(CAIXA)
+  quantidade   Float
+  valorUnit    Float
+  total        Float
+  ncm          String?
+  cfop         String?
+}
+
+model Devolucao {
+  id           String          @id @default(cuid())
+  clienteId    String
+  cliente      Cliente         @relation(fields: [clienteId], references: [id])
+  nfReferencia String?
+  data         DateTime
+  totalValor   Float           @default(0)
+  formaAcerto  FormaAcerto     @default(ABATIMENTO)
+  status       StatusDevolucao @default(PENDENTE)
+  observacao   String?
+  itens        ItemDevolucao[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ItemDevolucao {
+  id          String        @id @default(cuid())
+  devolucaoId String
+  devolucao   Devolucao     @relation(fields: [devolucaoId], references: [id], onDelete: Cascade)
+  produto     String
+  unidade     UnidadeMedida @default(CAIXA)
+  quantidade  Float
+  valorUnit   Float
+  total       Float
+}
+
+model ContaBancaria {
+  id            String           @id @default(cuid())
+  nome          String
+  tipo          TipoConta        @default(CONTA_CORRENTE)
+  saldoInicial  Float            @default(0)
+  movimentacoes Movimentacao[]
+  createdAt     DateTime         @default(now())
+}
+
+model Movimentacao {
+  id              String           @id @default(cuid())
+  contaBancariaId String
+  contaBancaria   ContaBancaria    @relation(fields: [contaBancariaId], references: [id])
+  data            DateTime
+  descricao       String
+  tipo            TipoMovimentacao
+  valor           Float
+  conciliado      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+}
+
+enum UserRole {
+  DONO
+  PARCEIRO
+  GERENTE
+}
+
+enum CategoriaCompra {
+  MATERIA_PRIMA
+  INSUMO
+  DESPESA_OPERACIONAL
+  DESPESA_ADMINISTRATIVA
+  OUTROS
+}
+
+enum CondicaoPagamento {
+  A_VISTA
+  A_PRAZO
+  PARCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+  BOLETO
+  TRANSFERENCIA
+  CHEQUE
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+}
+
+enum StatusPagamento {
+  A_PAGAR
+  PAGO
+  VENCIDO
+}
+
+enum UnidadeMedida {
+  CAIXA
+  KG
+  UNIDADE
+  SACO
+  LITRO
+  DUZIA
+  FARDO
+}
+
+enum StatusProducao {
+  RASCUNHO
+  FINALIZADO
+}
+
+enum AmbienteNF {
+  PRODUCAO
+  HOMOLOGACAO
+}
+
+enum StatusNF {
+  RASCUNHO
+  AUTORIZADA
+  CANCELADA
+  REJEITADA
+}
+
+enum StatusFinanceiro {
+  A_RECEBER
+  RECEBIDO
+}
+
+enum FormaAcerto {
+  ABATIMENTO
+  DEVOLUCAO_DINHEIRO
+  CREDITO
+}
+
+enum StatusDevolucao {
+  PENDENTE
+  ACERTADA
+}
+
+enum TipoConta {
+  CAIXA_FISICO
+  CONTA_CORRENTE
+  CONTA_POUPANCA
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+}
