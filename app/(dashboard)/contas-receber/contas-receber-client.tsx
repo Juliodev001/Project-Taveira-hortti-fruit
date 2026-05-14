@@ -49,7 +49,7 @@ export default function ContasReceberClient({ titulos: inicial, clientes }: { ti
       (statusFiltro === 'Em aberto' && (t.status === 'A_RECEBER' || t.status === 'VENCIDO')) ||
       t.status === statusFiltro
     const matchOrigem = origemFiltro === 'TODAS' || t.origem === origemFiltro
-    const matchCliente = clienteFiltro === 'TODOS' || t.clienteId === clienteFiltro
+    const matchCliente = clienteFiltro === 'TODOS' || t.cliente.id === clienteFiltro
     const dv = new Date(t.dataVenc)
     const matchDe = !de || dv >= new Date(de)
     const matchAte = !ate || dv <= new Date(ate)
