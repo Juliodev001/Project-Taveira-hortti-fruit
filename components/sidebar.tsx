@@ -369,6 +369,9 @@ export default function Sidebar({ userEmail, userName, userRole }: {
         {sections.map((section) => (
           <NavSection key={section.id} section={section} onClose={isMobile ? close : undefined} />
         ))}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 8, paddingTop: 8 }}>
+          <NavLink href="/conexoes" label="Conexões" icon={Wifi} color="#25D366" onClose={isMobile ? close : undefined} />
+        </div>
       </nav>
 
       {/* Footer */}
