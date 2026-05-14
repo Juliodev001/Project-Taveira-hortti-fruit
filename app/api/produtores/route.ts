@@ -21,9 +21,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { nome, cpf, telefone, parceiros } = await req.json()
+  let body: { nome?: string; cpf?: string; telefone?: string; parceiros?: { percentual: number }[] }
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'Body inválido.' }, { status: 400 }) }
+  const { nome, cpf, telefone, parceiros } = body
 
-  const totalPerc = (parceiros ?? []).reduce((s: number, p: { percentual: number }) => s + p.percentual, 0)
+  const lista: { percentual: number }[] = parceiros ?? []
+  const invalido = lista.some((p) => typeof p.percentual !== 'number' || !isFinite(p.percentual) || p.percentual < 0)
+  if (invalido) return NextResponse.json({ error: 'Percentual inválido.' }, { status: 400 })
+  const totalPerc = lista.reduce((s, p) => s + p.percentual, 0)
   if (totalPerc > 100) return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
 
   if (cpf) {
