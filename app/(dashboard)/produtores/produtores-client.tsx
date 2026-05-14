@@ -68,7 +68,7 @@ export default function ProdutoresClient() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontWeight: 700, color: NAVY, fontSize: 17, margin: 0 }}>{p.nome}</p>
-                        <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>CPF: {formatCPF(p.cpf)}</p>
+                        <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>CPF/CNPJ: {formatCPF(p.cpf)}</p>
                         {p.telefone && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
                             <Phone size={12} color="#9ca3af" />

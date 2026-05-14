@@ -489,11 +489,53 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Esconde scrollbar do sidebar ── */
-.sidebar-scroll::-webkit-scrollbar,
-.sidebar-scroll *::-webkit-scrollbar { display: none; }
-.sidebar-scroll,
-.sidebar-scroll * { scrollbar-width: none; -ms-overflow-style: none; }
+/* ── Sidebar: esconde scrollbar do aside raiz, mostra apenas no nav ── */
+.sidebar-scroll { overflow: hidden !important; }
+
+/* Scrollbar customizado para a nav do sidebar */
+.sidebar-nav-scroll {
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+.sidebar-nav-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.sidebar-nav-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.22);
+}
+
+/* ── Modal wrapper centralizado na área de conteúdo (direita do sidebar) ── */
+.modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 248px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  z-index: 1001;
+  pointer-events: none;
+}
+.modal-wrapper > * {
+  pointer-events: auto;
+}
+@media (max-width: 767px) {
+  .modal-wrapper {
+    left: 0;
+  }
+}
 
 /* ── Layout responsivo ── */
 .dashboard-content {

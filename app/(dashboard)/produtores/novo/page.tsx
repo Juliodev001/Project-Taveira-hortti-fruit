@@ -25,7 +25,7 @@ export default function NovoProdutorPage() {
 
   const addParceiro = () => {
     setErro('')
-    if (!novoParceiro.nome || !novoParceiro.cpf) return setErro('Nome e CPF do parceiro são obrigatórios.')
+    if (!novoParceiro.nome || !novoParceiro.cpf) return setErro('Nome e CPF/CNPJ do parceiro são obrigatórios.')
     if (novoParceiro.percentual <= 0) return setErro('Percentual deve ser maior que 0.')
     if (totalPerc + novoParceiro.percentual > 100) return setErro('A soma das porcentagens não pode ultrapassar 100%.')
     setParceiros((p) => [...p, { ...novoParceiro }])
@@ -34,7 +34,7 @@ export default function NovoProdutorPage() {
 
   const submit = async () => {
     setErro('')
-    if (!produtor.nome || !produtor.cpf) return setErro('Nome e CPF do produtor são obrigatórios.')
+    if (!produtor.nome || !produtor.cpf) return setErro('Nome e CPF/CNPJ do produtor são obrigatórios.')
     setLoading(true)
     const res = await fetch('/api/produtores', {
       method: 'POST',
@@ -70,8 +70,8 @@ export default function NovoProdutorPage() {
             <input value={produtor.nome} onChange={(e) => setProdutor((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome completo" style={inputStyle} />
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>CPF *</label>
-            <input value={produtor.cpf} onChange={(e) => setProdutor((f) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00" style={inputStyle} />
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>CPF/CNPJ *</label>
+            <input value={produtor.cpf} onChange={(e) => setProdutor((f) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00 ou 00.000.000/0001-00" style={inputStyle} />
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Telefone</label>
@@ -100,7 +100,7 @@ export default function NovoProdutorPage() {
             <input value={novoParceiro.nome} onChange={(e) => setNovoParceiro((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome completo" style={inputStyle} />
           </div>
           <div>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 5 }}>CPF</label>
+            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 5 }}>CPF/CNPJ</label>
             <input value={novoParceiro.cpf} onChange={(e) => setNovoParceiro((f) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00" style={inputStyle} />
           </div>
           <div>
@@ -123,7 +123,7 @@ export default function NovoProdutorPage() {
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f9fafb', borderRadius: 10, marginBottom: 8 }}>
               <div>
                 <p style={{ fontWeight: 600, color: NAVY, fontSize: 14, margin: 0 }}>{pa.nome}</p>
-                <p style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>CPF: {pa.cpf}</p>
+                <p style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>CPF/CNPJ: {pa.cpf}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ backgroundColor: `${GREEN}20`, color: GREEN, padding: '4px 14px', borderRadius: 20, fontWeight: 700, fontSize: 14 }}>

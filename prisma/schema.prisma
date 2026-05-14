@@ -29,6 +29,18 @@ model Produto {
   createdAt DateTime         @default(now())
   colheitas ColheitaDiaria[]
   saidas    SaidaLavoura[]
+  entradas  EntradaEstoque[]
+}
+
+model EntradaEstoque {
+  id         String        @id @default(cuid())
+  produtoId  String
+  produto    Produto       @relation(fields: [produtoId], references: [id])
+  quantidade Float
+  valorUnit  Float
+  data       DateTime      @default(now())
+  observacao String?
+  createdAt  DateTime      @default(now())
 }
 
 model ColheitaDiaria {
@@ -186,14 +198,57 @@ model Parceiro {
 }
 
 model Cliente {
-  id         String       @id @default(cuid())
+  id         String             @id @default(cuid())
   nome       String
   cnpjCpf    String?
   telefone   String?
   email      String?
-  createdAt  DateTime     @default(now())
+  createdAt  DateTime           @default(now())
   nfes       NotaFiscal[]
   devolucoes Devolucao[]
+  romaneios  Romaneio[]
+  titulos    TituloFinanceiro[]
+}
+
+model Romaneio {
+  id         String         @id @default(cuid())
+  numero     Int
+  clienteId  String
+  cliente    Cliente        @relation(fields: [clienteId], references: [id])
+  data       DateTime
+  status     StatusRomaneio @default(EMITIDO)
+  totalValor Float          @default(0)
+  observacao String?
+  itens      ItemRomaneio[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model ItemRomaneio {
+  id         String        @id @default(cuid())
+  romaneioId String
+  romaneio   Romaneio      @relation(fields: [romaneioId], references: [id], onDelete: Cascade)
+  produto    String
+  unidade    UnidadeMedida @default(CAIXA)
+  quantidade Float
+  valorUnit  Float
+  total      Float
+}
+
+model TituloFinanceiro {
+  id            String       @id @default(cuid())
+  clienteId     String
+  cliente       Cliente      @relation(fields: [clienteId], references: [id])
+  descricao     String
+  valor         Float
+  dataEmissao   DateTime     @default(now())
+  dataVenc      DateTime
+  dataPagamento DateTime?
+  status        StatusTitulo @default(A_RECEBER)
+  origem        OrigemTitulo @default(MANUAL)
+  nfeId         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model NotaFiscal {
@@ -364,4 +419,21 @@ enum TipoConta {
 enum TipoMovimentacao {
   ENTRADA
   SAIDA
+}
+
+enum StatusRomaneio {
+  EMITIDO
+  CANCELADO
+}
+
+enum StatusTitulo {
+  A_RECEBER
+  RECEBIDO
+  VENCIDO
+}
+
+enum OrigemTitulo {
+  NFE
+  ROMANEIO
+  MANUAL
 }

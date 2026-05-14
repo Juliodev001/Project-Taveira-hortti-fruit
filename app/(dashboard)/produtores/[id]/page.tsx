@@ -28,7 +28,7 @@ export default async function ProdutorDetailPage({ params }: { params: Promise<{
             ← Voltar para produtores
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: NAVY, margin: 0 }}>{produtor.nome}</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>CPF: {formatCPF(produtor.cpf)} · Cadastrado em {formatDate(produtor.createdAt)}</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>CPF/CNPJ: {formatCPF(produtor.cpf)} · Cadastrado em {formatDate(produtor.createdAt)}</p>
         </div>
         <Link href={`/produtores/${id}/editar`}
           style={{ padding: '9px 18px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', textDecoration: 'none', fontSize: 13, color: NAVY }}>
@@ -46,7 +46,7 @@ export default async function ProdutorDetailPage({ params }: { params: Promise<{
               <p style={{ color: NAVY, fontWeight: 600, margin: '2px 0 0' }}>{produtor.nome}</p>
             </div>
             <div>
-              <p style={{ color: '#9ca3af', fontSize: 12, margin: 0 }}>CPF</p>
+              <p style={{ color: '#9ca3af', fontSize: 12, margin: 0 }}>CPF/CNPJ</p>
               <p style={{ color: NAVY, fontWeight: 600, margin: '2px 0 0', fontFamily: 'monospace' }}>{formatCPF(produtor.cpf)}</p>
             </div>
             {produtor.telefone && (
@@ -87,7 +87,7 @@ export default async function ProdutorDetailPage({ params }: { params: Promise<{
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f9fafb' }}>
-                  {['Nome', 'CPF', 'Participação', 'Cadastrado em'].map((h) => (
+                  {['Nome', 'CPF/CNPJ', 'Participação', 'Cadastrado em'].map((h) => (
                     <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: 12, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>

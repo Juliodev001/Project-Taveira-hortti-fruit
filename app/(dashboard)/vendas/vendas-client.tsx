@@ -1,7 +1,7 @@
 'use client'
 import { motion } from 'motion/react'
 import Link from 'next/link'
-import { TrendingUp, Clock, CheckCircle, Plus, FileText } from 'lucide-react'
+import { TrendingUp, Clock, CheckCircle, Plus, FileText, Contact } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 const GREEN = '#5ab952'
@@ -37,11 +37,18 @@ export default function VendasClient({ nfes, receita, aReceber, recebido }: {
           <h1 style={{ fontSize: 26, fontWeight: 700, color: NAVY, margin: 0 }}>Vendas</h1>
           <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>Movimentações geradas a partir de NF-e emitidas</p>
         </div>
-        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          <Link href="/nfe" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', backgroundColor: GREEN, color: 'white', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
-            <Plus size={15} /> Nova NF-e
-          </Link>
-        </motion.div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Link href="/clientes" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', border: '1.5px solid #e5e7eb', backgroundColor: 'white', color: NAVY, borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+              <Contact size={15} /> Clientes
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Link href="/nfe/nova" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', backgroundColor: GREEN, color: 'white', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+              <Plus size={15} /> Nova Venda
+            </Link>
+          </motion.div>
+        </div>
       </motion.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>

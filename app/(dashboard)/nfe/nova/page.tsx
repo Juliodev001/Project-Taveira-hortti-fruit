@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Plus, X, UserPlus } from 'lucide-react'
 
 const GREEN = '#5ab952'
 const NAVY = '#2d3561'
@@ -12,12 +13,20 @@ const PINK = '#e8255a'
 type Cliente = { id: string; nome: string }
 type Item = { produto: string; unidade: string; quantidade: number; valorUnit: number; total: number; ncm: string; cfop: string }
 
+const emptyNovoCliente = { nome: '', cnpjCpf: '', telefone: '', email: '' }
+
 export default function NovaNFe() {
   const router = useRouter()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [itens, setItens] = useState<Item[]>([{ produto: '', unidade: 'CAIXA', quantidade: 1, valorUnit: 0, total: 0, ncm: '', cfop: '6101' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const [modalCliente, setModalCliente] = useState(false)
+  const [novoCliente, setNovoCliente] = useState(emptyNovoCliente)
+  const [savingCliente, setSavingCliente] = useState(false)
+  const [erroCliente, setErroCliente] = useState('')
+  const [clienteSelecionado, setClienteSelecionado] = useState('')
 
   useEffect(() => {
     fetch('/api/clientes').then(r => r.json()).then(d => setClientes(Array.isArray(d) ? d : []))
@@ -32,6 +41,26 @@ export default function NovaNFe() {
     }))
   }
 
+  async function criarCliente() {
+    if (!novoCliente.nome.trim()) { setErroCliente('Nome é obrigatório'); return }
+    setSavingCliente(true)
+    setErroCliente('')
+    try {
+      const body = { nome: novoCliente.nome.trim(), cnpjCpf: novoCliente.cnpjCpf || null, telefone: novoCliente.telefone || null, email: novoCliente.email || null }
+      const res = await fetch('/api/clientes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao criar')
+      const criado: Cliente = await res.json()
+      setClientes(prev => [...prev, criado].sort((a, b) => a.nome.localeCompare(b.nome)))
+      setClienteSelecionado(criado.id)
+      setModalCliente(false)
+      setNovoCliente(emptyNovoCliente)
+    } catch (e: unknown) {
+      setErroCliente(e instanceof Error ? e.message : 'Erro inesperado')
+    } finally {
+      setSavingCliente(false)
+    }
+  }
+
   const totalValor = itens.reduce((s, it) => s + it.total, 0)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -40,7 +69,7 @@ export default function NovaNFe() {
     setError('')
     const fd = new FormData(e.currentTarget)
     const body = {
-      clienteId: fd.get('clienteId'),
+      clienteId: clienteSelecionado || fd.get('clienteId'),
       numero: fd.get('numero') || null,
       serie: fd.get('serie') || '1',
       dataEmissao: fd.get('dataEmissao'),
@@ -50,7 +79,7 @@ export default function NovaNFe() {
     }
     const res = await fetch('/api/nfe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) {
-      router.push('/nfe')
+      router.push('/vendas')
       router.refresh()
     } else {
       const d = await res.json().catch(() => ({}))
@@ -59,16 +88,16 @@ export default function NovaNFe() {
     }
   }
 
-  const inp = { width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, color: NAVY, outline: 'none', boxSizing: 'border-box' as const }
+  const inp = { width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, color: NAVY, outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit' }
   const lbl = { fontSize: 13, fontWeight: 500, color: NAVY, display: 'block', marginBottom: 6 } as React.CSSProperties
 
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <Link href="/nfe" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none', marginBottom: 8, display: 'inline-block' }}>
-          ← Voltar
+        <Link href="/vendas" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none', marginBottom: 8, display: 'inline-block' }}>
+          ← Voltar para Vendas
         </Link>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: NAVY, margin: 0 }}>Nova NF-e</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: NAVY, margin: 0 }}>Nova Venda / NF-e</h1>
         <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>Nota Fiscal Eletrônica modelo 55 – Produtor Rural</p>
       </div>
 
@@ -78,9 +107,25 @@ export default function NovaNFe() {
             <h3 style={{ fontSize: 15, fontWeight: 600, color: NAVY, margin: '0 0 16px' }}>Dados da nota</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={lbl}>Cliente / Destinatário *</label>
-                <select name="clienteId" required style={inp}>
-                  <option value="">Selecione</option>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ ...lbl, marginBottom: 0 }}>Cliente / Destinatário *</label>
+                  <motion.button
+                    type="button"
+                    onClick={() => { setModalCliente(true); setErroCliente('') }}
+                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', backgroundColor: `${NAVY}10`, color: NAVY, border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    <UserPlus size={12} /> Novo cliente
+                  </motion.button>
+                </div>
+                <select
+                  name="clienteId"
+                  required
+                  value={clienteSelecionado}
+                  onChange={e => setClienteSelecionado(e.target.value)}
+                  style={inp}
+                >
+                  <option value="">Selecione um cliente</option>
                   {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
@@ -119,8 +164,8 @@ export default function NovaNFe() {
                 whileHover={{ scale: 1.05, backgroundColor: '#1e2550', boxShadow: '0 4px 14px rgba(45,53,97,0.35)' }}
                 whileTap={{ scale: 0.93 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                style={{ padding: '6px 14px', backgroundColor: NAVY, color: 'white', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
-                + Item
+                style={{ padding: '6px 14px', backgroundColor: NAVY, color: 'white', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <Plus size={12} style={{ display: 'inline', marginRight: 4 }} />Item
               </motion.button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 360, overflowY: 'auto' }}>
@@ -162,18 +207,86 @@ export default function NovaNFe() {
         {error && <p style={{ color: PINK, fontSize: 13, margin: '0 0 16px' }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <Link href="/nfe" style={{ padding: '10px 20px', border: '1.5px solid #e5e7eb', borderRadius: 10, textDecoration: 'none', fontSize: 14, color: NAVY }}>
+          <Link href="/vendas" style={{ padding: '10px 20px', border: '1.5px solid #e5e7eb', borderRadius: 10, textDecoration: 'none', fontSize: 14, color: NAVY }}>
             Cancelar
           </Link>
           <motion.button type="submit" disabled={loading}
             whileHover={!loading ? { scale: 1.04, backgroundColor: '#4aa344', boxShadow: '0 8px 25px rgba(90,185,82,0.45)' } : {}}
             whileTap={!loading ? { scale: 0.95 } : {}}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            style={{ padding: '10px 24px', backgroundColor: GREEN, color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Salvando...' : 'Criar NF-e'}
+            style={{ padding: '10px 24px', backgroundColor: GREEN, color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}>
+            {loading ? 'Salvando...' : 'Registrar Venda'}
           </motion.button>
         </div>
       </form>
+
+      {/* Modal: Criar novo cliente inline */}
+      <AnimatePresence>
+        {modalCliente && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setModalCliente(false)}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1000 }} />
+            <div className="modal-wrapper">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93, y: 20 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+              style={{ backgroundColor: 'white', borderRadius: 16, padding: 28, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: NAVY, margin: 0 }}>Cadastrar Novo Cliente</h2>
+                <motion.button onClick={() => setModalCliente(false)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                  style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', color: '#6b7280' }}>
+                  <X size={16} />
+                </motion.button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={lbl}>Nome *</label>
+                  <input value={novoCliente.nome} onChange={e => setNovoCliente(p => ({ ...p, nome: e.target.value }))}
+                    placeholder="Nome completo ou razão social" style={inp} autoFocus />
+                </div>
+                <div>
+                  <label style={lbl}>CPF / CNPJ</label>
+                  <input value={novoCliente.cnpjCpf} onChange={e => setNovoCliente(p => ({ ...p, cnpjCpf: e.target.value }))}
+                    placeholder="000.000.000-00" style={inp} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={lbl}>Telefone</label>
+                    <input value={novoCliente.telefone} onChange={e => setNovoCliente(p => ({ ...p, telefone: e.target.value }))}
+                      placeholder="(00) 00000-0000" style={inp} />
+                  </div>
+                  <div>
+                    <label style={lbl}>E-mail</label>
+                    <input type="email" value={novoCliente.email} onChange={e => setNovoCliente(p => ({ ...p, email: e.target.value }))}
+                      placeholder="email@exemplo.com" style={inp} />
+                  </div>
+                </div>
+              </div>
+
+              {erroCliente && (
+                <p style={{ color: PINK, fontSize: 13, margin: '10px 0 0', padding: '8px 12px', backgroundColor: `${PINK}10`, borderRadius: 8 }}>{erroCliente}</p>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+                <motion.button type="button" onClick={() => setModalCliente(false)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  style={{ padding: '9px 16px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', fontSize: 14, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Cancelar
+                </motion.button>
+                <motion.button type="button" onClick={criarCliente} disabled={savingCliente}
+                  whileHover={!savingCliente ? { scale: 1.03, backgroundColor: '#4aa344' } : {}}
+                  whileTap={!savingCliente ? { scale: 0.97 } : {}}
+                  style={{ padding: '9px 20px', backgroundColor: GREEN, color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: savingCliente ? 'not-allowed' : 'pointer', opacity: savingCliente ? 0.7 : 1, fontFamily: 'inherit' }}>
+                  {savingCliente ? 'Cadastrando...' : 'Cadastrar e Selecionar'}
+                </motion.button>
+              </div>
+            </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
