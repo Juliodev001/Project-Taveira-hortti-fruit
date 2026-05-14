@@ -32,15 +32,22 @@ export async function POST(req: NextRequest) {
   const { action } = await req.json()
   try {
     if (action === 'start') {
-      // Create session (ignore error if already exists) then start
-      await fetch(`${WAHA_URL}/api/sessions`, {
+      // Try to start existing session first
+      const startRes = await fetch(`${WAHA_URL}/api/sessions/${WAHA_SESSION}/start`, {
         method: 'POST',
         headers: h(),
-        body: JSON.stringify({ name: WAHA_SESSION, start: true }),
       })
+      // If session doesn't exist (404), create and start it
+      if (startRes.status === 404) {
+        await fetch(`${WAHA_URL}/api/sessions`, {
+          method: 'POST',
+          headers: h(),
+          body: JSON.stringify({ name: WAHA_SESSION, start: true }),
+        })
+      }
     } else if (action === 'stop') {
-      await fetch(`${WAHA_URL}/api/sessions/${WAHA_SESSION}`, {
-        method: 'DELETE',
+      await fetch(`${WAHA_URL}/api/sessions/${WAHA_SESSION}/stop`, {
+        method: 'POST',
         headers: h(),
       })
     }
