@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ShoppingCart, BarChart2, TrendingUp,
   FileText, RotateCcw, Landmark, Users, LogOut, Sprout,
   Package, ArrowUpFromLine, UserCog, ChevronDown, Receipt,
-  Menu, X, Contact, ClipboardList, DollarSign, MoreHorizontal, Boxes,
+  Menu, X, Contact, ClipboardList, DollarSign, MoreHorizontal, Boxes, Wifi,
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
