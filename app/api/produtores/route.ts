@@ -26,12 +26,14 @@ export async function POST(req: NextRequest) {
   const totalPerc = (parceiros ?? []).reduce((s: number, p: { percentual: number }) => s + p.percentual, 0)
   if (totalPerc > 100) return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
 
-  const existing = await prisma.produtor.findUnique({ where: { cpf } })
-  if (existing) return NextResponse.json({ error: 'CPF já cadastrado.' }, { status: 400 })
+  if (cpf) {
+    const existing = await prisma.produtor.findUnique({ where: { cpf } })
+    if (existing) return NextResponse.json({ error: 'CPF já cadastrado.' }, { status: 400 })
+  }
 
   const produtor = await prisma.produtor.create({
     data: {
-      nome, cpf, telefone: telefone || null,
+      nome, cpf: cpf || null, telefone: telefone || null,
       parceiros: { create: parceiros ?? [] },
     },
     include: { parceiros: true },

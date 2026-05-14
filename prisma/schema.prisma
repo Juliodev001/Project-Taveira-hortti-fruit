@@ -163,7 +163,7 @@ model SaidaProducao {
 model Produtor {
   id          String                 @id @default(cuid())
   nome        String
-  cpf         String                 @unique
+  cpf         String?                @unique
   telefone    String?
   parceiros   Parceiro[]
   colheitas   ColheitaDiaria[]

@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react'
@@ -13,15 +13,28 @@ type Parceiro = { nome: string; cpf: string; percentual: number }
 
 const inputStyle = { width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none', color: NAVY }
 
-export default function NovoProdutorPage() {
+export default function EditarProdutorPage() {
   const router = useRouter()
+  const { id } = useParams<{ id: string }>()
+
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [produtor, setProdutor] = useState({ nome: '', cpf: '', telefone: '' })
   const [parceiros, setParceiros] = useState<Parceiro[]>([])
   const [novoParceiro, setNovoParceiro] = useState({ nome: '', cpf: '', percentual: 0 })
   const [erro, setErro] = useState('')
 
   const totalPerc = parceiros.reduce((s, p) => s + p.percentual, 0)
+
+  useEffect(() => {
+    fetch(`/api/produtores/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setProdutor({ nome: data.nome, cpf: data.cpf, telefone: data.telefone ?? '' })
+        setParceiros(data.parceiros.map((p: { nome: string; cpf: string; percentual: number }) => ({ nome: p.nome, cpf: p.cpf, percentual: p.percentual })))
+      })
+      .finally(() => setFetching(false))
+  }, [id])
 
   const addParceiro = () => {
     setErro('')
@@ -36,8 +49,8 @@ export default function NovoProdutorPage() {
     setErro('')
     if (!produtor.nome) return setErro('Nome do produtor é obrigatório.')
     setLoading(true)
-    const res = await fetch('/api/produtores', {
-      method: 'POST',
+    const res = await fetch(`/api/produtores/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...produtor, parceiros }),
     })
@@ -47,23 +60,31 @@ export default function NovoProdutorPage() {
       setLoading(false)
       return
     }
-    router.push('/produtores')
+    router.push(`/produtores/${id}`)
+  }
+
+  if (fetching) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+        <Loader2 size={24} className="animate-spin" style={{ color: GREEN }} />
+      </div>
+    )
   }
 
   return (
     <div style={{ maxWidth: 700 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-        <Link href="/produtores" style={{ color: '#6b7280', display: 'flex' }}><ArrowLeft size={20} /></Link>
+        <Link href={`/produtores/${id}`} style={{ color: '#6b7280', display: 'flex' }}><ArrowLeft size={20} /></Link>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: NAVY, margin: 0 }}>Novo Produtor</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>Cadastre o dono da lavoura e seus parceiros</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: NAVY, margin: 0 }}>Editar Produtor</h1>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>Atualize os dados do produtor e seus parceiros</p>
         </div>
       </div>
 
       {/* Dados do Produtor */}
       <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         style={{ backgroundColor: 'white', borderRadius: 14, padding: 28, marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: NAVY, marginBottom: 20 }}>👤 Dados do Produtor (Dono da Lavoura)</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: NAVY, marginBottom: 20 }}>👤 Dados do Produtor</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
           <div>
             <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Nome *</label>
@@ -71,7 +92,7 @@ export default function NovoProdutorPage() {
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>CPF/CNPJ</label>
-            <input value={produtor.cpf} onChange={(e) => setProdutor((f) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00 ou 00.000.000/0001-00" style={inputStyle} />
+            <input value={produtor.cpf} onChange={(e) => setProdutor((f) => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00" style={inputStyle} />
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Telefone</label>
@@ -141,7 +162,7 @@ export default function NovoProdutorPage() {
         </AnimatePresence>
 
         {parceiros.length === 0 && (
-          <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>Nenhum parceiro adicionado</p>
+          <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>Nenhum parceiro cadastrado</p>
         )}
 
         {totalPerc < 100 && parceiros.length > 0 && (
@@ -159,7 +180,7 @@ export default function NovoProdutorPage() {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-        <Link href="/produtores" style={{ padding: '10px 20px', border: '1.5px solid #e5e7eb', borderRadius: 10, color: '#6b7280', textDecoration: 'none', fontSize: 13 }}>Cancelar</Link>
+        <Link href={`/produtores/${id}`} style={{ padding: '10px 20px', border: '1.5px solid #e5e7eb', borderRadius: 10, color: '#6b7280', textDecoration: 'none', fontSize: 13 }}>Cancelar</Link>
         <motion.button
           whileHover={!loading ? { scale: 1.04, backgroundColor: '#4aa344', boxShadow: '0 8px 25px rgba(90,185,82,0.45)' } : {}}
           whileTap={!loading ? { scale: 0.95 } : {}}
@@ -167,7 +188,7 @@ export default function NovoProdutorPage() {
           onClick={submit} disabled={loading}
           style={{ padding: '10px 24px', backgroundColor: GREEN, color: 'white', border: 'none', borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
           {loading && <Loader2 size={15} className="animate-spin" />}
-          Salvar Produtor
+          Salvar Alterações
         </motion.button>
       </div>
     </div>
