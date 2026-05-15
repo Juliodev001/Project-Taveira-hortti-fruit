@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
       nome,
       ...(cpf ? { cpf } : {}),
       ...(telefone ? { telefone } : {}),
-      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) as any[] },
     },
     include: { parceiros: true },
   })

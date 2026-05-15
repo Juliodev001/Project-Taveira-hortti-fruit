@@ -44,7 +44,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ...(telefone ? { telefone } : {}),
       parceiros: {
         deleteMany: {},
-        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) as any[],
       },
     },
     include: { parceiros: true },
