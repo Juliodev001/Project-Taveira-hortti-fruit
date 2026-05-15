@@ -49,18 +49,23 @@ export default function EditarProdutorPage() {
     setErro('')
     if (!produtor.nome) return setErro('Nome do produtor é obrigatório.')
     setLoading(true)
-    const res = await fetch(`/api/produtores/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...produtor, parceiros }),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      setErro(data.error || 'Erro ao salvar.')
+    try {
+      const res = await fetch(`/api/produtores/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...produtor, parceiros }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErro(data.error || `Erro ao salvar (${res.status}).`)
+        return
+      }
+      router.push(`/produtores/${id}`)
+    } catch {
+      setErro('Erro de conexão. Tente novamente.')
+    } finally {
       setLoading(false)
-      return
     }
-    router.push(`/produtores/${id}`)
   }
 
   if (fetching) {

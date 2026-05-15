@@ -50,7 +50,12 @@ export async function POST(req: NextRequest) {
     },
   }
 
-  const produtor = await prisma.produtor.create({ data, include: { parceiros: true } })
-  memCache.invalidate(KEY)
-  return NextResponse.json(produtor, { status: 201 })
+  try {
+    const produtor = await prisma.produtor.create({ data, include: { parceiros: true } })
+    memCache.invalidate(KEY)
+    return NextResponse.json(produtor, { status: 201 })
+  } catch (e) {
+    console.error('Erro ao criar produtor:', e)
+    return NextResponse.json({ error: 'Erro interno ao salvar. Verifique os dados.' }, { status: 500 })
+  }
 }

@@ -36,18 +36,23 @@ export default function NovoProdutorPage() {
     setErro('')
     if (!produtor.nome) return setErro('Nome do produtor é obrigatório.')
     setLoading(true)
-    const res = await fetch('/api/produtores', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...produtor, parceiros }),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      setErro(data.error || 'Erro ao salvar.')
+    try {
+      const res = await fetch('/api/produtores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...produtor, parceiros }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErro(data.error || `Erro ao salvar (${res.status}).`)
+        return
+      }
+      router.push('/produtores')
+    } catch {
+      setErro('Erro de conexão. Tente novamente.')
+    } finally {
       setLoading(false)
-      return
     }
-    router.push('/produtores')
   }
 
   return (

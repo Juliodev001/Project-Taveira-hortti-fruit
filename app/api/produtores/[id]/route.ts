@@ -52,9 +52,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   }
 
-  const produtor = await prisma.produtor.update({ where: { id }, data, include: { parceiros: true } })
-  memCache.invalidate(KEY)
-  return NextResponse.json(produtor)
+  try {
+    const produtor = await prisma.produtor.update({ where: { id }, data, include: { parceiros: true } })
+    memCache.invalidate(KEY)
+    return NextResponse.json(produtor)
+  } catch (e) {
+    console.error('Erro ao atualizar produtor:', e)
+    return NextResponse.json({ error: 'Erro interno ao salvar. Verifique os dados.' }, { status: 500 })
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
