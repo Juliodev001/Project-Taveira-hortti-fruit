@@ -65,9 +65,8 @@ export default function EstoqueClient({ produtos }: { produtos: ProdutoEstoque[]
 
   const totalCaixas = filtrados.reduce((s, p) => s + p.totalQtd, 0)
   const totalEntradas = filtrados.reduce((s, p) => s + p.totalEntradas, 0)
-  const mediaGeral = filtrados.length
-    ? filtrados.reduce((s, p) => s + p.mediaPreco * p.totalQtd, 0) / (totalCaixas || 1)
-    : 0
+  const valorTotalEstoque = filtrados.reduce((s, p) => s + p.totalQtd * p.mediaPreco, 0)
+  const mediaGeral = totalCaixas > 0 ? valorTotalEstoque / totalCaixas : 0
 
   const produtoSel = selecionado ? produtos.find(p => p.produto.id === selecionado) : null
 
@@ -88,11 +87,12 @@ export default function EstoqueClient({ produtos }: { produtos: ProdutoEstoque[]
 
       {/* Summary cards */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
         {[
-          { label: 'Produtos', value: filtrados.length, suffix: '', color: NAVY },
+          { label: 'Produtos', value: String(filtrados.length), suffix: '', color: NAVY },
           { label: 'Total de Caixas', value: totalCaixas.toFixed(0), suffix: ' cx', color: GREEN },
           { label: 'Preço Médio Geral', value: formatCurrency(mediaGeral), suffix: '/cx', color: ORANGE },
+          { label: 'Valor Total do Estoque', value: formatCurrency(valorTotalEstoque), suffix: '', color: '#7c3aed' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.07 + i * 0.05 }}
