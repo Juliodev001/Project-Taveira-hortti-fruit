@@ -9,7 +9,7 @@ const GREEN = '#5ab952'
 const NAVY = '#2d3561'
 const PINK = '#e8255a'
 
-type Parceiro = { nome: string; cpf: string; percentual: number }
+type Parceiro = { id?: string; nome: string; cpf: string; percentual: number }
 
 const inputStyle = { width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none', color: NAVY }
 
@@ -31,7 +31,7 @@ export default function EditarProdutorPage() {
       .then((r) => r.json())
       .then((data) => {
         setProdutor({ nome: data.nome, cpf: data.cpf, telefone: data.telefone ?? '' })
-        setParceiros(data.parceiros.map((p: { nome: string; cpf: string | null; percentual: number }) => ({ nome: p.nome, cpf: p.cpf ?? '', percentual: p.percentual })))
+        setParceiros(data.parceiros.map((p: { id: string; nome: string; cpf: string | null; percentual: number }) => ({ id: p.id, nome: p.nome, cpf: p.cpf ?? '', percentual: p.percentual })))
       })
       .finally(() => setFetching(false))
   }, [id])
@@ -155,11 +155,19 @@ export default function EditarProdutorPage() {
                 <span style={{ backgroundColor: `${GREEN}20`, color: GREEN, padding: '4px 14px', borderRadius: 20, fontWeight: 700, fontSize: 14 }}>
                   {pa.percentual}%
                 </span>
-                <motion.button onClick={() => setParceiros((p) => p.filter((_, idx) => idx !== i))}
-                  whileHover={{ scale: 1.2, rotate: 10 }} whileTap={{ scale: 0.8, rotate: -10 }}
+                <motion.button
+                  onClick={async () => {
+                    if (!confirm(`Excluir parceiro "${pa.nome}"?`)) return
+                    if (pa.id) {
+                      await fetch(`/api/parceiros/${pa.id}`, { method: 'DELETE' })
+                    }
+                    setParceiros((p) => p.filter((_, idx) => idx !== i))
+                  }}
+                  whileHover={{ scale: 1.15, backgroundColor: '#fff0f3' }}
+                  whileTap={{ scale: 0.85 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: PINK }}>
-                  <Trash2 size={15} />
+                  style={{ background: 'none', border: `1px solid ${PINK}30`, borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: PINK }}>
+                  <Trash2 size={14} />
                 </motion.button>
               </div>
             </motion.div>
