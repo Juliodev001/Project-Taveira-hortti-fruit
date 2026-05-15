@@ -40,11 +40,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { id },
     data: {
       nome,
-      cpf,
-      telefone: telefone || null,
+      ...(cpf ? { cpf } : {}),
+      ...(telefone ? { telefone } : {}),
       parceiros: {
         deleteMany: {},
-        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ ...p, cpf: p.cpf || null })),
+        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })),
       },
     },
     include: { parceiros: true },

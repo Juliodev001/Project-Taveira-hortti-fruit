@@ -40,8 +40,10 @@ export async function POST(req: NextRequest) {
 
   const produtor = await prisma.produtor.create({
     data: {
-      nome, cpf: cpf || undefined, telefone: telefone || undefined,
-      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ ...p, cpf: p.cpf || null })) },
+      nome,
+      ...(cpf ? { cpf } : {}),
+      ...(telefone ? { telefone } : {}),
+      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) },
     },
     include: { parceiros: true },
   })
