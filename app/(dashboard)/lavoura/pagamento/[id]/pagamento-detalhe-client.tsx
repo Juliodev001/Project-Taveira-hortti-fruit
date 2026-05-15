@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'motion/react'
-import { ChevronLeft, Printer, CheckCircle, Trash2, MessageCircle, X, Send } from 'lucide-react'
+import { ChevronLeft, Printer, CheckCircle, Trash2, MessageCircle } from 'lucide-react'
 import PageSkeleton from '@/components/page-skeleton'
 
 const GREEN = '#5ab952'
@@ -39,9 +39,7 @@ export default function PagamentoDetalheClient() {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [waConfirm, setWaConfirm] = useState(false)
-  const [waSending, setWaSending] = useState(false)
-  const [waStatus, setWaStatus] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [sharing, setSharing] = useState(false)
   const docRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -74,57 +72,31 @@ export default function PagamentoDetalheClient() {
     router.push('/lavoura/pagamento')
   }
 
-  async function enviarWhatsApp() {
+  async function compartilharWhatsApp() {
     if (!docRef.current) return
-    setWaSending(true)
-    setWaStatus(null)
+    setSharing(true)
     try {
-      // 1. Baixa o PNG para o dispositivo do usuário
       const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
+      const blob = await fetch(dataUrl).then(r => r.blob())
+      const file = new File([blob], `pagamento-${produtor.nome.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
+
+      // Mobile: abre o WhatsApp nativo para escolher o contato
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Pagamento — ${produtor.nome}` })
+        return
+      }
+
+      // Desktop: baixa o PNG e abre o WhatsApp Web para anexar manualmente
       const link = document.createElement('a')
       link.href = dataUrl
-      link.download = `pagamento-${fechamento!.produtor.nome.replace(/\s+/g, '-')}.png`
+      link.download = file.name
       link.click()
-
-      // 2. Envia mensagem de texto formatada via WAHA
-      const deducoesTxt = [
-        valesEmbalagem > 0 ? `• Vales Embalagem: -${fmtBRL(valesEmbalagem)}` : '',
-        valesDinheiro > 0 ? `• Vales Dinheiro: -${fmtBRL(valesDinheiro)}` : '',
-        creditos > 0 ? `• Créditos: -${fmtBRL(creditos)}` : '',
-        debitosAnteriores > 0 ? `• Débitos Anteriores: -${fmtBRL(debitosAnteriores)}` : '',
-      ].filter(Boolean).join('\n')
-
-      const message = [
-        `🌱 *Do Campo Alimentos — Comprovante de Pagamento*`,
-        ``,
-        `Olá, *${fechamento!.produtor.nome}*!`,
-        `Período: ${fmtDate(dataInicio)} a ${fmtDate(dataFim)}`,
-        `Data de pagamento: ${fmtDate(dataPagamento)}`,
-        ``,
-        `📦 Total de faturas: *${fmtBRL(totalFaturas)}*`,
-        deducoesTxt ? `\n📉 Deduções:\n${deducoesTxt}` : '',
-        ``,
-        `✅ *A Receber: ${fmtBRL(aReceber)}*`,
-      ].filter(l => l !== undefined).join('\n')
-
-      const res = await fetch('/api/whatsapp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: fechamento!.produtor.telefone, message }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setWaStatus({ ok: true, msg: 'Mensagem enviada! PNG salvo no seu dispositivo.' })
-        setWaConfirm(false)
-        setTimeout(() => setWaStatus(null), 4000)
-      } else {
-        setWaStatus({ ok: false, msg: data.error ?? 'Erro ao enviar mensagem' })
-      }
-    } catch {
-      setWaStatus({ ok: false, msg: 'Erro ao processar. Tente novamente.' })
+      setTimeout(() => window.open('https://web.whatsapp.com', '_blank'), 600)
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return // usuário cancelou
     } finally {
-      setWaSending(false)
+      setSharing(false)
     }
   }
 
@@ -160,21 +132,13 @@ export default function PagamentoDetalheClient() {
           </motion.button>
 
           <motion.button
-            onClick={() => {
-              if (!produtor.telefone) {
-                setWaStatus({ ok: false, msg: 'Produtor sem telefone cadastrado.' })
-                setTimeout(() => setWaStatus(null), 3500)
-                return
-              }
-              setWaConfirm(true)
-              setWaStatus(null)
-            }}
-            whileHover={{ scale: 1.04, backgroundColor: '#1aa34a', boxShadow: '0 6px 20px rgba(37,211,102,0.4)' }}
-            whileTap={{ scale: 0.95 }}
+            onClick={compartilharWhatsApp} disabled={sharing}
+            whileHover={!sharing ? { scale: 1.04, backgroundColor: '#1aa34a', boxShadow: '0 6px 20px rgba(37,211,102,0.4)' } : {}}
+            whileTap={!sharing ? { scale: 0.95 } : {}}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', backgroundColor: WA, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', backgroundColor: WA, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: sharing ? 'not-allowed' : 'pointer', opacity: sharing ? 0.7 : 1 }}
           >
-            <MessageCircle size={14} /> WhatsApp
+            <MessageCircle size={14} /> {sharing ? 'Gerando...' : 'WhatsApp'}
           </motion.button>
 
           {status !== 'PAGO' && (
@@ -233,40 +197,40 @@ export default function PagamentoDetalheClient() {
           </div>
         ) : (
           <div className="table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb' }}>
-                {['Data', 'Nº Doc', 'Produto / Qualidade', 'Qtd.', 'Descarte', 'Líquido', 'Preço/cx', 'Sub-total'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Sub-total' ? 'right' : 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {colheitas.map((c, i) => {
-                const liquido = c.quantidadeTotal - c.descarte
-                const sub = liquido * c.preco
-                return (
-                  <motion.tr key={c.id}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 + i * 0.03 }}
-                    style={{ borderBottom: '1px solid #f3f4f6' }}
-                  >
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: NAVY }}>{fmtDate(c.data)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{c.nrDoc ?? '—'}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>
-                      {c.produto.nome}
-                      {c.qualidade && <span style={{ fontSize: 11, color: ORANGE, marginLeft: 6, fontWeight: 700 }}>{c.qualidade}</span>}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{c.quantidadeTotal.toFixed(1)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: PINK }}>{c.descarte > 0 ? c.descarte.toFixed(1) : '—'}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>{liquido.toFixed(1)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{fmtBRL(c.preco)}</td>
-                    <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, color: GREEN, textAlign: 'right' }}>{fmtBRL(sub)}</td>
-                  </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f9fafb' }}>
+                  {['Data', 'Nº Doc', 'Produto / Qualidade', 'Qtd.', 'Descarte', 'Líquido', 'Preço/cx', 'Sub-total'].map(h => (
+                    <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Sub-total' ? 'right' : 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {colheitas.map((c, i) => {
+                  const liquido = c.quantidadeTotal - c.descarte
+                  const sub = liquido * c.preco
+                  return (
+                    <motion.tr key={c.id}
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 + i * 0.03 }}
+                      style={{ borderBottom: '1px solid #f3f4f6' }}
+                    >
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: NAVY }}>{fmtDate(c.data)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{c.nrDoc ?? '—'}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>
+                        {c.produto.nome}
+                        {c.qualidade && <span style={{ fontSize: 11, color: ORANGE, marginLeft: 6, fontWeight: 700 }}>{c.qualidade}</span>}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{c.quantidadeTotal.toFixed(1)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: PINK }}>{c.descarte > 0 ? c.descarte.toFixed(1) : '—'}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>{liquido.toFixed(1)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{fmtBRL(c.preco)}</td>
+                      <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, color: GREEN, textAlign: 'right' }}>{fmtBRL(sub)}</td>
+                    </motion.tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -314,90 +278,6 @@ export default function PagamentoDetalheClient() {
           </div>
         </div>
       </motion.div>
-
-      {/* Toast de status WhatsApp */}
-      <AnimatePresence>
-        {waStatus && (
-          <motion.div
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
-            style={{
-              position: 'fixed', bottom: 28, right: 28, zIndex: 2000,
-              backgroundColor: waStatus.ok ? '#f0faf0' : '#fff0f3',
-              border: `1px solid ${waStatus.ok ? GREEN : PINK}40`,
-              color: waStatus.ok ? GREEN : PINK,
-              padding: '12px 18px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-              boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
-            }}
-          >
-            {waStatus.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal de confirmação WhatsApp */}
-      <AnimatePresence>
-        {waConfirm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => !waSending && setWaConfirm(false)}
-              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1500 }}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.93, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-              style={{
-                position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                zIndex: 1600, backgroundColor: 'white', borderRadius: 16, padding: 28,
-                width: 'min(420px, 90vw)', boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: `${WA}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <MessageCircle size={18} color={WA} />
-                  </div>
-                  <p style={{ fontWeight: 700, color: NAVY, fontSize: 15, margin: 0 }}>Enviar pelo WhatsApp</p>
-                </div>
-                <button onClick={() => setWaConfirm(false)} disabled={waSending}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 4 }}>
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div style={{ backgroundColor: '#f9fafb', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
-                <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 4px' }}>Enviar para</p>
-                <p style={{ fontWeight: 700, color: NAVY, fontSize: 15, margin: '0 0 2px' }}>{produtor.nome}</p>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{produtor.telefone}</p>
-              </div>
-
-              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.6 }}>
-                O resumo do pagamento será enviado por WhatsApp e o <strong>PNG do comprovante será salvo no seu dispositivo</strong>.
-              </p>
-
-              {waStatus && !waStatus.ok && (
-                <p style={{ fontSize: 13, color: PINK, marginBottom: 12, fontWeight: 600 }}>{waStatus.msg}</p>
-              )}
-
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button onClick={() => setWaConfirm(false)} disabled={waSending}
-                  style={{ padding: '9px 18px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Cancelar
-                </button>
-                <motion.button
-                  onClick={enviarWhatsApp} disabled={waSending}
-                  whileHover={!waSending ? { scale: 1.04, backgroundColor: '#1aa34a' } : {}}
-                  whileTap={!waSending ? { scale: 0.96 } : {}}
-                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', backgroundColor: WA, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: waSending ? 'not-allowed' : 'pointer', opacity: waSending ? 0.75 : 1, fontFamily: 'inherit' }}
-                >
-                  <Send size={14} />
-                  {waSending ? 'Enviando...' : 'Confirmar Envio'}
-                </motion.button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
