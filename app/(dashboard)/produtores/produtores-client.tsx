@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import Link from 'next/link'
-import { Users, Plus, Phone, ChevronRight } from 'lucide-react'
+import { Users, Plus, Phone, ChevronRight, Trash2 } from 'lucide-react'
 import { formatCPF } from '@/lib/utils'
 import PageSkeleton from '@/components/page-skeleton'
 
@@ -16,6 +16,7 @@ type Produtor = { id: string; nome: string; cpf: string | null; telefone: string
 export default function ProdutoresClient() {
   const [produtores, setProdutores] = useState<Produtor[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/produtores')
@@ -23,6 +24,19 @@ export default function ProdutoresClient() {
       .then(setProdutores)
       .finally(() => setLoading(false))
   }, [])
+
+  const handleDelete = async (id: string, nome: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Excluir "${nome}" e todos os seus parceiros? Esta ação não pode ser desfeita.`)) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/produtores/${id}`, { method: 'DELETE' })
+      if (res.ok) setProdutores((prev) => prev.filter((p) => p.id !== id))
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (loading) return <PageSkeleton cards={0} rows={5} />
 
@@ -76,12 +90,23 @@ export default function ProdutoresClient() {
                           </div>
                         )}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                         <div style={{ backgroundColor: `${NAVY}10`, borderRadius: 10, padding: '6px 12px', textAlign: 'right' }}>
                           <p style={{ fontSize: 10, color: '#9ca3af', margin: 0 }}>Parceiros</p>
                           <p style={{ fontWeight: 800, color: NAVY, fontSize: 22, margin: 0, lineHeight: 1 }}>{p.parceiros.length}</p>
                         </div>
-                        <ChevronRight size={16} color="#9ca3af" />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <motion.button
+                            onClick={(e) => handleDelete(p.id, p.nome, e)}
+                            whileHover={{ scale: 1.12, backgroundColor: '#fff0f3' }}
+                            whileTap={{ scale: 0.9 }}
+                            disabled={deletingId === p.id}
+                            style={{ background: 'none', border: `1px solid ${PINK}30`, borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: PINK, opacity: deletingId === p.id ? 0.5 : 1 }}
+                          >
+                            <Trash2 size={13} />
+                          </motion.button>
+                          <ChevronRight size={16} color="#9ca3af" />
+                        </div>
                       </div>
                     </div>
 
