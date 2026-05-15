@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { memCache } from '@/lib/mem-cache'
 
 const KEY = 'produtores'
+
+type ParceiroInput = { nome: string; cpf?: string; percentual: number }
 
 export async function GET() {
   const session = await getSession()
@@ -21,17 +22,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  let body: { nome?: string; cpf?: string; telefone?: string; parceiros?: { nome: string; cpf?: string; percentual: number }[] }
-  try { body = await req.json() } catch { return NextResponse.json({ error: 'Body inválido.' }, { status: 400 }) }
-  const { nome, cpf, telefone, parceiros } = body
 
-  const lista: { percentual: number }[] = parceiros ?? []
+  let body: { nome?: string; cpf?: string; telefone?: string; parceiros?: ParceiroInput[] }
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'Body inválido.' }, { status: 400 }) }
+
+  const { nome, cpf, telefone, parceiros } = body
+  if (!nome) return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 })
+
+  const lista = parceiros ?? []
   const invalido = lista.some((p) => typeof p.percentual !== 'number' || !isFinite(p.percentual) || p.percentual < 0)
   if (invalido) return NextResponse.json({ error: 'Percentual inválido.' }, { status: 400 })
-  const totalPerc = lista.reduce((s, p) => s + p.percentual, 0)
-  if (totalPerc > 100) return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
-
-  if (!nome) return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 })
+  if (lista.reduce((s, p) => s + p.percentual, 0) > 100)
+    return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
 
   if (cpf) {
     const existing = await prisma.produtor.findUnique({ where: { cpf } })
@@ -39,16 +41,16 @@ export async function POST(req: NextRequest) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const produtor = await (prisma.produtor.create as any)({
-    data: {
-      nome,
-      cpf: cpf || null,
-      telefone: telefone || null,
-      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })) },
+  const data: any = {
+    nome,
+    cpf: cpf || null,
+    telefone: telefone || null,
+    parceiros: {
+      create: lista.map((p) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })),
     },
-    include: { parceiros: true },
-  })
-  revalidateTag('produtores', 'max')
+  }
+
+  const produtor = await prisma.produtor.create({ data, include: { parceiros: true } })
   memCache.invalidate(KEY)
   return NextResponse.json(produtor, { status: 201 })
 }

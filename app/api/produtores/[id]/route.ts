@@ -5,6 +5,8 @@ import { memCache } from '@/lib/mem-cache'
 
 const KEY = 'produtores'
 
+type ParceiroInput = { nome: string; cpf?: string; percentual: number }
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,10 +25,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { nome, cpf, telefone, parceiros } = await req.json()
+  const { nome, cpf, telefone, parceiros } = await req.json() as {
+    nome: string; cpf?: string; telefone?: string; parceiros?: ParceiroInput[]
+  }
 
-  const totalPerc = (parceiros ?? []).reduce((s: number, p: { percentual: number }) => s + p.percentual, 0)
-  if (totalPerc > 100) return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
+  const lista = parceiros ?? []
+  if (lista.reduce((s: number, p: ParceiroInput) => s + p.percentual, 0) > 100)
+    return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
 
   const existing = await prisma.produtor.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: 'Produtor não encontrado.' }, { status: 404 })
@@ -37,20 +42,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const produtor = await (prisma.produtor.update as any)({
-    where: { id },
-    data: {
-      nome,
-      cpf: cpf || null,
-      telefone: telefone || null,
-      parceiros: {
-        deleteMany: {},
-        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })),
-      },
+  const data: any = {
+    nome,
+    cpf: cpf || null,
+    telefone: telefone || null,
+    parceiros: {
+      deleteMany: {},
+      create: lista.map((p: ParceiroInput) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })),
     },
-    include: { parceiros: true },
-  })
+  }
 
+  const produtor = await prisma.produtor.update({ where: { id }, data, include: { parceiros: true } })
   memCache.invalidate(KEY)
   return NextResponse.json(produtor)
 }

@@ -123,7 +123,7 @@ export default function NovoProdutorPage() {
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f9fafb', borderRadius: 10, marginBottom: 8 }}>
               <div>
                 <p style={{ fontWeight: 600, color: NAVY, fontSize: 14, margin: 0 }}>{pa.nome}</p>
-                <p style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>CPF/CNPJ: {pa.cpf}</p>
+                {pa.cpf && <p style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>CPF/CNPJ: {pa.cpf}</p>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ backgroundColor: `${GREEN}20`, color: GREEN, padding: '4px 14px', borderRadius: 20, fontWeight: 700, fontSize: 14 }}>
@@ -140,15 +140,18 @@ export default function NovoProdutorPage() {
           ))}
         </AnimatePresence>
 
-        {parceiros.length === 0 && (
-          <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>Nenhum parceiro adicionado</p>
-        )}
-
-        {totalPerc < 100 && parceiros.length > 0 && (
-          <div style={{ padding: '10px 14px', backgroundColor: '#fffbeb', borderRadius: 8, border: '1px solid #fde68a', fontSize: 13, color: '#92400e', marginTop: 8 }}>
-            ⚠️ {(100 - totalPerc).toFixed(0)}% ainda não distribuído (fica com o produtor)
+        {/* Linha do produtor com % restante */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: `${GREEN}0d`, borderRadius: 10, border: `1px dashed ${GREEN}40`, marginTop: parceiros.length > 0 ? 4 : 0 }}>
+          <div>
+            <p style={{ fontWeight: 600, color: NAVY, fontSize: 14, margin: 0 }}>
+              {produtor.nome || 'Produtor (Dono)'}
+            </p>
+            <p style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>Porcentagem restante</p>
           </div>
-        )}
+          <span style={{ backgroundColor: `${GREEN}30`, color: GREEN, padding: '4px 14px', borderRadius: 20, fontWeight: 700, fontSize: 14 }}>
+            {Math.max(0, 100 - totalPerc).toFixed(0)}%
+          </span>
+        </div>
       </motion.section>
 
       {erro && (
