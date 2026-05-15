@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ error: 'CPF já cadastrado.' }, { status: 400 })
   }
 
-  const produtor = await prisma.produtor.create({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const produtor = await (prisma.produtor.create as any)({
     data: {
       nome,
-      ...(cpf ? { cpf } : {}),
-      ...(telefone ? { telefone } : {}),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) as any[] },
+      cpf: cpf || null,
+      telefone: telefone || null,
+      parceiros: { create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })) },
     },
     include: { parceiros: true },
   })

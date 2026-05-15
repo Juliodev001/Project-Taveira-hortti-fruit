@@ -36,16 +36,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (conflict) return NextResponse.json({ error: 'CPF já cadastrado por outro produtor.' }, { status: 400 })
   }
 
-  const produtor = await prisma.produtor.update({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const produtor = await (prisma.produtor.update as any)({
     where: { id },
     data: {
       nome,
-      ...(cpf ? { cpf } : {}),
-      ...(telefone ? { telefone } : {}),
+      cpf: cpf || null,
+      telefone: telefone || null,
       parceiros: {
         deleteMany: {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, ...(p.cpf ? { cpf: p.cpf } : {}) })) as any[],
+        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ nome: p.nome, percentual: p.percentual, cpf: p.cpf || null })),
       },
     },
     include: { parceiros: true },
