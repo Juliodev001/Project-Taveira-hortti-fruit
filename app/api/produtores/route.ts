@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  let body: { nome?: string; cpf?: string; telefone?: string; parceiros?: { percentual: number }[] }
+  let body: { nome?: string; cpf?: string; telefone?: string; parceiros?: { nome: string; cpf?: string; percentual: number }[] }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Body inválido.' }, { status: 400 }) }
   const { nome, cpf, telefone, parceiros } = body
 
