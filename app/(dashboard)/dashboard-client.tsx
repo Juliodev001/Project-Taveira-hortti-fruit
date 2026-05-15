@@ -26,7 +26,7 @@ type DashData = {
   fechamentosResumo: {
     pendentes: number
     pagos: number
-    lista: { id: string; produtor: string; cpf: string; dataInicio: string; dataFim: string; dataPagamento: string; status: string }[]
+    lista: { id: string; produtor: string; cpf: string | null; dataInicio: string; dataFim: string; dataPagamento: string; status: string }[]
   }
 }
 

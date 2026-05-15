@@ -10,7 +10,7 @@ const NAVY = '#2d3561'
 const PINK = '#e8255a'
 const ORANGE = '#e87320'
 
-type Produtor = { id: string; nome: string; cpf: string }
+type Produtor = { id: string; nome: string; cpf: string | null }
 type Fechamento = {
   id: string
   produtorId: string

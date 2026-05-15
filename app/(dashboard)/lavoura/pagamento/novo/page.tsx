@@ -11,7 +11,7 @@ const PINK = '#e8255a'
 const ORANGE = '#e87320'
 
 type Parceiro = { id: string; nome: string; percentual: number }
-type Produtor = { id: string; nome: string; cpf: string; parceiros: Parceiro[] }
+type Produtor = { id: string; nome: string; cpf: string | null; parceiros: Parceiro[] }
 type Produto = { id: string; nome: string; unidade: string }
 type Colheita = {
   id: string; data: string; produto: Produto

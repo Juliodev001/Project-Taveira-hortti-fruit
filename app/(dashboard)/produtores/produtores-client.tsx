@@ -11,7 +11,7 @@ const NAVY = '#2d3561'
 const PINK = '#e8255a'
 
 type Parceiro = { id: string; nome: string; percentual: number }
-type Produtor = { id: string; nome: string; cpf: string; telefone: string | null; parceiros: Parceiro[] }
+type Produtor = { id: string; nome: string; cpf: string | null; telefone: string | null; parceiros: Parceiro[] }
 
 export default function ProdutoresClient() {
   const [produtores, setProdutores] = useState<Produtor[]>([])

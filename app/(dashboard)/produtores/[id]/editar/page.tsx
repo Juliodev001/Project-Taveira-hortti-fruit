@@ -31,7 +31,7 @@ export default function EditarProdutorPage() {
       .then((r) => r.json())
       .then((data) => {
         setProdutor({ nome: data.nome, cpf: data.cpf, telefone: data.telefone ?? '' })
-        setParceiros(data.parceiros.map((p: { nome: string; cpf: string; percentual: number }) => ({ nome: p.nome, cpf: p.cpf, percentual: p.percentual })))
+        setParceiros(data.parceiros.map((p: { nome: string; cpf: string | null; percentual: number }) => ({ nome: p.nome, cpf: p.cpf ?? '', percentual: p.percentual })))
       })
       .finally(() => setFetching(false))
   }, [id])

@@ -20,7 +20,7 @@ function iconeProduto(categoria?: string) {
   return categoria ? (iconesPorCategoria[categoria] ?? '📦') : '📦'
 }
 type Parceiro = { id: string; nome: string; percentual: number }
-type Produtor = { id: string; nome: string; cpf: string; parceiros: Parceiro[] }
+type Produtor = { id: string; nome: string; cpf: string | null; parceiros: Parceiro[] }
 
 export default function NovaColheita() {
   const router = useRouter()

@@ -9,7 +9,7 @@ const ORANGE = '#e87320'
 
 type Produto = { id: string; nome: string }
 type Parceiro = { nome: string; percentual: number }
-type Produtor = { nome: string; cpf: string; parceiros: Parceiro[] }
+type Produtor = { nome: string; cpf: string | null; parceiros: Parceiro[] }
 type Colheita = {
   id: string; data: string; produto: Produto
   quantidadeTotal: number; preco: number; qualidade: string | null
