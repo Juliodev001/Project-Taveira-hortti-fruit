@@ -75,19 +75,34 @@ export default function PagamentoDetalheClient() {
   async function compartilharWhatsApp() {
     if (!docRef.current) return
     setSharing(true)
+
+    // Verificar Web Share API antes de qualquer await (contexto de gesto do usuário)
+    const testFile = new File(['t'], 't.png', { type: 'image/png' })
+    const useShareAPI = typeof navigator.canShare === 'function' && navigator.canShare({ files: [testFile] })
+
+    // Abrir WhatsApp aqui (antes do await) para não ser bloqueado pelo popup blocker
+    let waWindow: Window | null = null
+    if (!useShareAPI) {
+      const digits = produtor.telefone?.replace(/\D/g, '') ?? ''
+      const waPhone = digits ? (digits.startsWith('55') ? digits : '55' + digits) : ''
+      const waUrl = waPhone
+        ? `https://wa.me/${waPhone}?text=${encodeURIComponent('Segue o comprovante de pagamento')}`
+        : 'https://web.whatsapp.com'
+      waWindow = window.open(waUrl, '_blank')
+    }
+
     try {
       const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
       const blob = await fetch(dataUrl).then(r => r.blob())
       const file = new File([blob], `pagamento-${produtor.nome.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
 
-      // Mobile com suporte a Web Share API: abre o share sheet nativo
-      if (navigator.canShare?.({ files: [file] })) {
+      if (useShareAPI) {
         await navigator.share({ files: [file], title: `Pagamento — ${produtor.nome}` })
         return
       }
 
-      // Fallback: baixa o PNG e abre o WhatsApp com o número do produtor
+      // Baixar o PNG
       const objUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = objUrl
@@ -96,15 +111,12 @@ export default function PagamentoDetalheClient() {
       link.click()
       document.body.removeChild(link)
       setTimeout(() => URL.revokeObjectURL(objUrl), 1000)
-
-      const phone = produtor.telefone?.replace(/\D/g, '')
-      const waTarget = phone
-        ? `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent('Segue o comprovante de pagamento')}`
-        : 'https://web.whatsapp.com'
-      setTimeout(() => window.open(waTarget, '_blank'), 800)
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') return
-      alert('Erro ao gerar a imagem. Tente novamente.')
+      if (e instanceof Error && e.name === 'AbortError') {
+        waWindow?.close()
+        return
+      }
+      alert('Erro ao gerar a imagem: ' + (e instanceof Error ? e.message : String(e)))
     } finally {
       setSharing(false)
     }
