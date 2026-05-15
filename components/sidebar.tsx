@@ -1,17 +1,20 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   LayoutDashboard, ShoppingCart, BarChart2, TrendingUp,
   FileText, RotateCcw, Landmark, Users, LogOut, Sprout,
-  Package, ArrowUpFromLine, UserCog, ChevronDown, Receipt,
+  Package, ArrowUpFromLine, UserCog, ChevronDown, ChevronLeft, Receipt,
   Menu, X, Contact, ClipboardList, DollarSign, MoreHorizontal, Boxes, Wifi,
 } from 'lucide-react'
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
 type NavSection = { id: string; label: string; color: string; items: NavItem[]; defaultOpen?: boolean }
+
+const logoWrapStyle: React.CSSProperties = { display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12 }
 
 const sections: NavSection[] = [
   {
@@ -288,6 +291,7 @@ export default function Sidebar({ userEmail, userName, userRole }: {
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -329,32 +333,60 @@ export default function Sidebar({ userEmail, userName, userRole }: {
             <X size={15} />
           </button>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 8,
-              flexShrink: 0,
-              background: 'linear-gradient(135deg, #5ab952 0%, #3a8435 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 20,
-            }}
+        <motion.div
+          initial={{ opacity: 0, y: -8, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={logoWrapStyle}
+        >
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+            style={{ flexShrink: 0 }}
           >
-            🍓
-          </div>
-          <div>
-            <div style={{ lineHeight: 1.15 }}>
-              <span style={{ color: '#e8255a', fontSize: 17, fontWeight: 800, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>do </span>
-              <span style={{ color: '#5ab952', fontSize: 17, fontWeight: 800, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>campo</span>
-            </div>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, letterSpacing: '2px', textTransform: 'uppercase', margin: '2px 0 0' }}>
-              Alimentos · Gestão
-            </p>
-          </div>
-        </div>
+            <Image
+              src="/logo01.png"
+              alt="Do Campo Alimentos"
+              width={110}
+              height={66}
+              style={{ objectFit: 'contain', borderRadius: 8, display: 'block' }}
+              priority
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+          >
+            <span style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '2.5px',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.35)',
+            }}>
+              Sistema de
+            </span>
+            <span style={{
+              fontSize: 14,
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              background: 'linear-gradient(90deg, #5ab952, #a8e063)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              lineHeight: 1,
+            }}>
+              Gestão
+            </span>
+            <div style={{
+              height: 2,
+              width: 32,
+              borderRadius: 2,
+              background: 'linear-gradient(90deg, #5ab952, transparent)',
+            }} />
+          </motion.div>
+        </motion.div>
       </div>
 
       <div style={{
@@ -455,9 +487,20 @@ export default function Sidebar({ userEmail, userName, userRole }: {
     </>
   )
 
+  const asideBase: React.CSSProperties = {
+    width: 248,
+    height: '100vh',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'linear-gradient(175deg, #1a1f3c 0%, #1e2447 55%, #192039 100%)',
+    borderRight: '1px solid rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+  }
+
   return (
     <>
-      {/* Hamburger button — mobile only */}
+      {/* Hamburger button — mobile open trigger */}
       {isMobile && (
         <button
           onClick={() => setMobileOpen(o => !o)}
@@ -484,41 +527,128 @@ export default function Sidebar({ userEmail, userName, userRole }: {
         </button>
       )}
 
+      {/* Desktop collapse handle — on sidebar right border */}
+      <AnimatePresence>
+        {!isMobile && !collapsed && (
+          <motion.button
+            key="collapse-handle"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.18 }}
+            whileHover={{ scale: 1.18, borderColor: 'rgba(90,185,82,0.5)', color: '#5ab952' }}
+            whileTap={{ scale: 0.88 }}
+            onClick={() => setCollapsed(true)}
+            style={{
+              position: 'fixed',
+              left: 235,
+              top: 'calc(50vh - 13px)',
+              zIndex: 1100,
+              width: 26,
+              height: 26,
+              borderRadius: '50%',
+              background: '#1a2040',
+              border: '1px solid rgba(255,255,255,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.5)',
+              boxShadow: '2px 0 10px rgba(0,0,0,0.35)',
+            }}
+            aria-label="Recolher sidebar"
+          >
+            <ChevronLeft size={13} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Floating re-open button — desktop collapsed */}
+      <AnimatePresence>
+        {!isMobile && collapsed && (
+          <motion.button
+            key="reopen"
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            whileHover={{ scale: 1.08, backgroundColor: '#252c52' }}
+            whileTap={{ scale: 0.93 }}
+            onClick={() => setCollapsed(false)}
+            style={{
+              position: 'fixed',
+              top: 14,
+              left: 14,
+              zIndex: 1100,
+              width: 38,
+              height: 38,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #1a1f3c, #1e2447)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+            }}
+            aria-label="Expandir sidebar"
+          >
+            <Menu size={17} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Backdrop — mobile only */}
-      {isMobile && mobileOpen && (
-        <div
-          onClick={close}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1000,
-            background: 'rgba(0,0,0,0.5)',
-          }}
-        />
+      <AnimatePresence>
+        {isMobile && mobileOpen && (
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={close}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)' }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Desktop sidebar — collapse animation */}
+      {!isMobile && (
+        <motion.div
+          animate={{ width: collapsed ? 0 : 248 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          style={{ flexShrink: 0, overflow: 'hidden', position: 'sticky', top: 0, height: '100vh' }}
+        >
+          <motion.aside
+            className="sidebar-scroll"
+            animate={{ opacity: collapsed ? 0 : 1, x: collapsed ? -24 : 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            style={asideBase}
+          >
+            {sidebarContent}
+          </motion.aside>
+        </motion.div>
       )}
 
-      {/* Sidebar */}
-      <aside
-        className="sidebar-scroll"
-        style={{
-          width: 248,
-          height: '100vh',
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'linear-gradient(175deg, #1a1f3c 0%, #1e2447 55%, #192039 100%)',
-          borderRight: '1px solid rgba(255,255,255,0.05)',
-          position: isMobile ? 'fixed' : 'sticky',
-          top: 0,
-          left: 0,
-          zIndex: isMobile ? 1050 : 'auto',
-          overflow: 'hidden',
-          transform: isMobile ? (mobileOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-          transition: isMobile ? 'transform 0.2s ease' : 'none',
-        }}
-      >
-        {sidebarContent}
-      </aside>
+      {/* Mobile sidebar — CSS slide */}
+      {isMobile && (
+        <aside
+          className="sidebar-scroll"
+          style={{
+            ...asideBase,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            zIndex: 1050,
+            transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.22s ease',
+          }}
+        >
+          {sidebarContent}
+        </aside>
+      )}
     </>
   )
 }

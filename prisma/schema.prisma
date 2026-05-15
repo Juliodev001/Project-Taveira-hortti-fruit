@@ -192,7 +192,7 @@ model Parceiro {
   produtorId String
   produtor   Produtor @relation(fields: [produtorId], references: [id], onDelete: Cascade)
   nome       String
-  cpf        String
+  cpf        String?
   percentual Float
   createdAt  DateTime @default(now())
 }

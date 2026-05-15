@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       telefone: telefone || null,
       parceiros: {
         deleteMany: {},
-        create: parceiros ?? [],
+        create: (parceiros ?? []).map((p: { nome: string; cpf?: string; percentual: number }) => ({ ...p, cpf: p.cpf || null })),
       },
     },
     include: { parceiros: true },

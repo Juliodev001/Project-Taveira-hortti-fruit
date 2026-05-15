@@ -25,7 +25,7 @@ export default function NovoProdutorPage() {
 
   const addParceiro = () => {
     setErro('')
-    if (!novoParceiro.nome || !novoParceiro.cpf) return setErro('Nome e CPF/CNPJ do parceiro são obrigatórios.')
+    if (!novoParceiro.nome) return setErro('Nome do parceiro é obrigatório.')
     if (novoParceiro.percentual <= 0) return setErro('Percentual deve ser maior que 0.')
     if (totalPerc + novoParceiro.percentual > 100) return setErro('A soma das porcentagens não pode ultrapassar 100%.')
     setParceiros((p) => [...p, { ...novoParceiro }])
