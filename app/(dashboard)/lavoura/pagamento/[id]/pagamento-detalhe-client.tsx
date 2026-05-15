@@ -92,21 +92,16 @@ export default function PagamentoDetalheClient() {
     }
 
     try {
-      const { toPng } = await import('html-to-image')
-
-      // html-to-image tenta buscar CSS/fontes externas; interceptamos para ignorar falhas
-      const origFetch = window.fetch.bind(window)
-      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-        try { return await origFetch(input, init) } catch { return new Response('', { status: 200 }) }
-      }
-      let dataUrl: string
-      try {
-        dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: true })
-      } finally {
-        window.fetch = origFetch
-      }
-
-      const blob = await origFetch(dataUrl).then(r => r.blob())
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(docRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      })
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob falhou')), 'image/png')
+      })
       const file = new File([blob], `pagamento-${produtor.nome.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
 
       if (useShareAPI) {
