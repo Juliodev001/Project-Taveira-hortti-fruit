@@ -93,7 +93,7 @@ export default function PagamentoDetalheClient() {
 
     try {
       const { toPng } = await import('html-to-image')
-      const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
+      const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: true })
       const blob = await fetch(dataUrl).then(r => r.blob())
       const file = new File([blob], `pagamento-${produtor.nome.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
 
