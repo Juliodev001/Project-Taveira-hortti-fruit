@@ -79,26 +79,50 @@ export default function PagamentoDetalheClient() {
     setWaSending(true)
     setWaStatus(null)
     try {
+      // 1. Baixa o PNG para o dispositivo do usuário
       const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
-      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
-      const caption = `Olá, ${fechamento!.produtor.nome}! Segue seu comprovante de pagamento.\nPeríodo: ${fmtDate(fechamento!.dataInicio)} a ${fmtDate(fechamento!.dataFim)}\nA Receber: ${fmtBRL(aReceber)}`
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `pagamento-${fechamento!.produtor.nome.replace(/\s+/g, '-')}.png`
+      link.click()
 
-      const res = await fetch('/api/whatsapp/send-image', {
+      // 2. Envia mensagem de texto formatada via WAHA
+      const deducoesTxt = [
+        valesEmbalagem > 0 ? `• Vales Embalagem: -${fmtBRL(valesEmbalagem)}` : '',
+        valesDinheiro > 0 ? `• Vales Dinheiro: -${fmtBRL(valesDinheiro)}` : '',
+        creditos > 0 ? `• Créditos: -${fmtBRL(creditos)}` : '',
+        debitosAnteriores > 0 ? `• Débitos Anteriores: -${fmtBRL(debitosAnteriores)}` : '',
+      ].filter(Boolean).join('\n')
+
+      const message = [
+        `🌱 *Do Campo Alimentos — Comprovante de Pagamento*`,
+        ``,
+        `Olá, *${fechamento!.produtor.nome}*!`,
+        `Período: ${fmtDate(dataInicio)} a ${fmtDate(dataFim)}`,
+        `Data de pagamento: ${fmtDate(dataPagamento)}`,
+        ``,
+        `📦 Total de faturas: *${fmtBRL(totalFaturas)}*`,
+        deducoesTxt ? `\n📉 Deduções:\n${deducoesTxt}` : '',
+        ``,
+        `✅ *A Receber: ${fmtBRL(aReceber)}*`,
+      ].filter(l => l !== undefined).join('\n')
+
+      const res = await fetch('/api/whatsapp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: fechamento!.produtor.telefone, image: base64, caption }),
+        body: JSON.stringify({ phone: fechamento!.produtor.telefone, message }),
       })
       const data = await res.json()
       if (res.ok) {
-        setWaStatus({ ok: true, msg: 'Enviado com sucesso!' })
+        setWaStatus({ ok: true, msg: 'Mensagem enviada! PNG salvo no seu dispositivo.' })
         setWaConfirm(false)
-        setTimeout(() => setWaStatus(null), 3000)
+        setTimeout(() => setWaStatus(null), 4000)
       } else {
-        setWaStatus({ ok: false, msg: data.error ?? 'Erro ao enviar' })
+        setWaStatus({ ok: false, msg: data.error ?? 'Erro ao enviar mensagem' })
       }
     } catch {
-      setWaStatus({ ok: false, msg: 'Erro ao gerar imagem. Tente novamente.' })
+      setWaStatus({ ok: false, msg: 'Erro ao processar. Tente novamente.' })
     } finally {
       setWaSending(false)
     }
@@ -348,7 +372,7 @@ export default function PagamentoDetalheClient() {
               </div>
 
               <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.6 }}>
-                O comprovante de pagamento será gerado como imagem e enviado via WhatsApp.
+                O resumo do pagamento será enviado por WhatsApp e o <strong>PNG do comprovante será salvo no seu dispositivo</strong>.
               </p>
 
               {waStatus && !waStatus.ok && (
