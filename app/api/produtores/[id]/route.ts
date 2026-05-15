@@ -67,7 +67,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  await prisma.produtor.delete({ where: { id } })
-  memCache.invalidate(KEY)
-  return NextResponse.json({ ok: true })
+  try {
+    // Desvincula colheitas e fechamentos antes de excluir
+    await prisma.colheitaDiaria.updateMany({ where: { produtorId: id }, data: { produtorId: null } })
+    await prisma.fechamentoPagamento.deleteMany({ where: { produtorId: id } })
+    await prisma.produtor.delete({ where: { id } })
+    memCache.invalidate(KEY)
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('Erro ao excluir produtor:', e)
+    return NextResponse.json({ error: 'Erro ao excluir produtor.' }, { status: 500 })
+  }
 }
