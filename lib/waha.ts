@@ -73,25 +73,3 @@ export async function wahaSendImage(phone: string, imageUrl: string, caption?: s
   }
 }
 
-export async function wahaSendImageBase64(phone: string, base64: string, caption?: string): Promise<WahaResult> {
-  try {
-    const res = await fetch(`${WAHA_URL}/api/sendImage`, {
-      method: 'POST',
-      headers: buildHeaders(),
-      body: JSON.stringify({
-        chatId: formatPhone(phone),
-        file: { data: base64, mimetype: 'image/png', filename: 'pagamento.png' },
-        caption: caption ?? '',
-        session: WAHA_SESSION,
-      }),
-      signal: AbortSignal.timeout(30000),
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      return { ok: false, error: data.message ?? `Erro ${res.status}` }
-    }
-    return { ok: true }
-  } catch {
-    return { ok: false, error: 'WAHA indisponível' }
-  }
-}

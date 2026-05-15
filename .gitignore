@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# imagens temporárias geradas para envio via WhatsApp
+/public/tmp/
+
 # production
 /build
 
