@@ -28,7 +28,7 @@ export default async function ProdutorDetailPage({ params }: { params: Promise<{
             ← Voltar para produtores
           </Link>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: NAVY, margin: 0 }}>{produtor.nome}</h1>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>CPF/CNPJ: {formatCPF(produtor.cpf)} · Cadastrado em {formatDate(produtor.createdAt)}</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>{produtor.cpf ? `CPF/CNPJ: ${formatCPF(produtor.cpf)} · ` : ''}Cadastrado em {formatDate(produtor.createdAt)}</p>
         </div>
         <Link href={`/produtores/${id}/editar`}
           style={{ padding: '9px 18px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', textDecoration: 'none', fontSize: 13, color: NAVY }}>
