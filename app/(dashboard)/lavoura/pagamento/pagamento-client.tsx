@@ -59,6 +59,7 @@ export default function PagamentoClient() {
     <div>
       <motion.div
         initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="page-header"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}
       >
         <div>
@@ -72,7 +73,7 @@ export default function PagamentoClient() {
         </motion.div>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="stats-grid-2" style={{ marginBottom: 24 }}>
         {cards.map(({ label, value, color, icon: Icon }, i) => (
           <motion.div
             key={label}
@@ -122,55 +123,56 @@ export default function PagamentoClient() {
             <Link href="/lavoura/pagamento/novo" style={{ color: GREEN, fontSize: 13 }}>Criar fechamento →</Link>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb' }}>
-                {['Produtor', 'Período', 'Pagamento', 'Status', ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {fechamentos.map((f, i) => {
-                const deducoes = f.valesEmbalagem + f.valesDinheiro + f.creditos + f.debitosAnteriores
-                return (
-                  <motion.tr
-                    key={f.id}
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.04, duration: 0.3 }}
-                    whileHover={{ backgroundColor: '#f8fffe' }}
-                    style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
-                  >
-                    <td style={{ padding: '13px 16px', fontSize: 14, fontWeight: 600, color: NAVY }}>
-                      {f.produtor.nome}
-                      <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>{f.produtor.cpf}</div>
-                    </td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280' }}>
-                      {fmt(f.dataInicio)} – {fmt(f.dataFim)}
-                    </td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280' }}>
-                      {fmt(f.dataPagamento)}
-                    </td>
-                    <td style={{ padding: '13px 16px' }}>
-                      <span style={{
-                        backgroundColor: f.status === 'PAGO' ? '#f0faf0' : '#fff7ed',
-                        color: f.status === 'PAGO' ? GREEN : ORANGE,
-                        padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-                      }}>
-                        {f.status === 'PAGO' ? 'Pago' : 'Pendente'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '13px 16px' }}>
-                      <Link href={`/lavoura/pagamento/${f.id}`}
-                        style={{ color: GREEN, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                        Ver →
-                      </Link>
-                    </td>
-                  </motion.tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="table-wrapper">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f9fafb' }}>
+                  {['Produtor', 'Período', 'Pagamento', 'Status', ''].map(h => (
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {fechamentos.map((f, i) => {
+                  return (
+                    <motion.tr
+                      key={f.id}
+                      initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + i * 0.04, duration: 0.3 }}
+                      whileHover={{ backgroundColor: '#f8fffe' }}
+                      style={{ borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}
+                    >
+                      <td style={{ padding: '13px 16px', fontSize: 14, fontWeight: 600, color: NAVY, whiteSpace: 'nowrap' }}>
+                        {f.produtor.nome}
+                        <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>{f.produtor.cpf}</div>
+                      </td>
+                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        {fmt(f.dataInicio)} – {fmt(f.dataFim)}
+                      </td>
+                      <td style={{ padding: '13px 16px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        {fmt(f.dataPagamento)}
+                      </td>
+                      <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
+                        <span style={{
+                          backgroundColor: f.status === 'PAGO' ? '#f0faf0' : '#fff7ed',
+                          color: f.status === 'PAGO' ? GREEN : ORANGE,
+                          padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                        }}>
+                          {f.status === 'PAGO' ? 'Pago' : 'Pendente'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '13px 16px' }}>
+                        <Link href={`/lavoura/pagamento/${f.id}`}
+                          style={{ color: GREEN, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                          Ver →
+                        </Link>
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </motion.div>
     </div>

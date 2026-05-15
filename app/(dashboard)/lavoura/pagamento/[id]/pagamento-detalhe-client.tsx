@@ -105,6 +105,7 @@ export default function PagamentoDetalheClient() {
     <div>
       <motion.div
         initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+        className="page-header"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}
       >
         <div>
@@ -114,7 +115,7 @@ export default function PagamentoDetalheClient() {
           <h1 style={{ fontSize: 26, fontWeight: 700, color: NAVY, margin: 0 }}>Fechamento — {produtor.nome}</h1>
           <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>{fmtDate(dataInicio)} a {fmtDate(dataFim)}</p>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span style={{
             backgroundColor: status === 'PAGO' ? '#f0faf0' : '#fff7ed',
             color: status === 'PAGO' ? GREEN : ORANGE,
@@ -196,11 +197,12 @@ export default function PagamentoDetalheClient() {
             <p>Nenhuma colheita registrada neste período para este produtor.</p>
           </div>
         ) : (
+          <div className="table-wrapper">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ backgroundColor: '#f9fafb' }}>
                 {['Data', 'Nº Doc', 'Produto / Qualidade', 'Qtd.', 'Descarte', 'Líquido', 'Preço/cx', 'Sub-total'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Sub-total' ? 'right' : 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
+                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Sub-total' ? 'right' : 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -230,6 +232,7 @@ export default function PagamentoDetalheClient() {
               })}
             </tbody>
           </table>
+          </div>
         )}
 
         {/* Resumo financeiro */}

@@ -42,6 +42,7 @@ export default function ColheitaClient() {
     <div>
       <motion.div
         initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="page-header"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}
       >
         <div>
@@ -58,7 +59,7 @@ export default function ColheitaClient() {
         </motion.div>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="stats-grid-3" style={{ marginBottom: 24 }}>
         {cards.map(({ label, value, color, icon: Icon }, i) => (
           <motion.div
             key={label}
@@ -102,42 +103,44 @@ export default function ColheitaClient() {
             <Link href="/lavoura/colheita/nova" style={{ color: GREEN, fontSize: 13 }}>Registrar primeira colheita →</Link>
           </motion.div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb' }}>
-                {['Data', 'Produto', 'Qtd Total', 'Dono', 'Parceiros', 'Responsável', 'Obs'].map((h) => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
+          <div className="table-wrapper">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f9fafb' }}>
+                  {['Data', 'Produto', 'Qtd Total', 'Dono', 'Parceiros', 'Responsável', 'Obs'].map((h) => (
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {colheitas.map((c, i) => (
+                  <motion.tr
+                    key={c.id}
+                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.38 + i * 0.04 }}
+                    whileHover={{ backgroundColor: '#f8fffe' }}
+                    style={{ borderBottom: '1px solid #f3f4f6' }}
+                  >
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: NAVY, whiteSpace: 'nowrap' }}>{formatDate(c.data)}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY, whiteSpace: 'nowrap' }}>🍓 {c.produto.nome}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, color: NAVY, whiteSpace: 'nowrap' }}>{c.quantidadeTotal.toFixed(1)} cx</td>
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                      <span style={{ backgroundColor: '#f0faf0', color: GREEN, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+                        {c.quantidadeDono.toFixed(1)} cx
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                      <span style={{ backgroundColor: '#fff7ed', color: ORANGE, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+                        {c.quantidadeParceiro.toFixed(1)} cx
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>{c.responsavel.name}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 12, color: '#9ca3af' }}>{c.observacao ?? '—'}</td>
+                  </motion.tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {colheitas.map((c, i) => (
-                <motion.tr
-                  key={c.id}
-                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.38 + i * 0.04 }}
-                  whileHover={{ backgroundColor: '#f8fffe' }}
-                  style={{ borderBottom: '1px solid #f3f4f6' }}
-                >
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: NAVY }}>{formatDate(c.data)}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: NAVY }}>🍓 {c.produto.nome}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, color: NAVY }}>{c.quantidadeTotal.toFixed(1)} cx</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ backgroundColor: '#f0faf0', color: GREEN, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
-                      {c.quantidadeDono.toFixed(1)} cx
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ backgroundColor: '#fff7ed', color: ORANGE, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
-                      {c.quantidadeParceiro.toFixed(1)} cx
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b7280' }}>{c.responsavel.name}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 12, color: '#9ca3af' }}>{c.observacao ?? '—'}</td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </motion.div>
     </div>
