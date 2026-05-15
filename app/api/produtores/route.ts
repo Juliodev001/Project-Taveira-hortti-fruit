@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
   const totalPerc = lista.reduce((s, p) => s + p.percentual, 0)
   if (totalPerc > 100) return NextResponse.json({ error: 'Soma das porcentagens não pode ultrapassar 100%.' }, { status: 400 })
 
+  if (!nome) return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 })
+
   if (cpf) {
     const existing = await prisma.produtor.findUnique({ where: { cpf } })
     if (existing) return NextResponse.json({ error: 'CPF já cadastrado.' }, { status: 400 })
