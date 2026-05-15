@@ -2,18 +2,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'motion/react'
-import { ChevronLeft, Printer, CheckCircle, Trash2, Share2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
+import { ChevronLeft, Printer, CheckCircle, Trash2, MessageCircle, X, Send } from 'lucide-react'
 import PageSkeleton from '@/components/page-skeleton'
 
 const GREEN = '#5ab952'
 const NAVY = '#2d3561'
 const PINK = '#e8255a'
 const ORANGE = '#e87320'
+const WA = '#25D366'
 
 type Produto = { id: string; nome: string; unidade: string }
 type Parceiro = { id: string; nome: string; percentual: number }
-type Produtor = { id: string; nome: string; cpf: string | null; parceiros: Parceiro[] }
+type Produtor = { id: string; nome: string; cpf: string | null; telefone: string | null; parceiros: Parceiro[] }
 type Colheita = {
   id: string; data: string; produto: Produto
   quantidadeTotal: number; preco: number; qualidade: string | null
@@ -38,7 +39,9 @@ export default function PagamentoDetalheClient() {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [sharing, setSharing] = useState(false)
+  const [waConfirm, setWaConfirm] = useState(false)
+  const [waSending, setWaSending] = useState(false)
+  const [waStatus, setWaStatus] = useState<{ ok: boolean; msg: string } | null>(null)
   const docRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -71,33 +74,33 @@ export default function PagamentoDetalheClient() {
     router.push('/lavoura/pagamento')
   }
 
-  async function compartilharWhatsApp() {
+  async function enviarWhatsApp() {
     if (!docRef.current) return
-    setSharing(true)
+    setWaSending(true)
+    setWaStatus(null)
     try {
       const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
-      const res = await fetch(dataUrl)
-      const blob = await res.blob()
-      const file = new File([blob], `pagamento-${fechamento?.produtor.nome ?? id}.png`, { type: 'image/png' })
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+      const caption = `Olá, ${fechamento!.produtor.nome}! Segue seu comprovante de pagamento.\nPeríodo: ${fmtDate(fechamento!.dataInicio)} a ${fmtDate(fechamento!.dataFim)}\nA Receber: ${fmtBRL(aReceber)}`
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `Pagamento — ${fechamento?.produtor.nome}` })
+      const res = await fetch('/api/whatsapp/send-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fechamento!.produtor.telefone, image: base64, caption }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setWaStatus({ ok: true, msg: 'Enviado com sucesso!' })
+        setWaConfirm(false)
+        setTimeout(() => setWaStatus(null), 3000)
       } else {
-        // fallback: baixa a imagem e abre WhatsApp com texto
-        const link = document.createElement('a')
-        link.href = dataUrl
-        link.download = file.name
-        link.click()
-        const texto = encodeURIComponent(
-          `Olá! Segue seu comprovante de pagamento referente ao período de ${fmtDate(fechamento!.dataInicio)} a ${fmtDate(fechamento!.dataFim)}.\nA Receber: ${fmtBRL(aReceber)}`
-        )
-        window.open(`https://wa.me/?text=${texto}`, '_blank')
+        setWaStatus({ ok: false, msg: data.error ?? 'Erro ao enviar' })
       }
-    } catch (e) {
-      if (e instanceof Error && e.name !== 'AbortError') alert('Não foi possível compartilhar. Tente pelo botão Imprimir/PDF.')
+    } catch {
+      setWaStatus({ ok: false, msg: 'Erro ao gerar imagem. Tente novamente.' })
     } finally {
-      setSharing(false)
+      setWaSending(false)
     }
   }
 
@@ -133,13 +136,21 @@ export default function PagamentoDetalheClient() {
           </motion.button>
 
           <motion.button
-            onClick={compartilharWhatsApp} disabled={sharing}
-            whileHover={!sharing ? { scale: 1.04, backgroundColor: '#1aa34a', boxShadow: '0 6px 20px rgba(37,211,102,0.4)' } : undefined}
-            whileTap={!sharing ? { scale: 0.95 } : undefined}
+            onClick={() => {
+              if (!produtor.telefone) {
+                setWaStatus({ ok: false, msg: 'Produtor sem telefone cadastrado.' })
+                setTimeout(() => setWaStatus(null), 3500)
+                return
+              }
+              setWaConfirm(true)
+              setWaStatus(null)
+            }}
+            whileHover={{ scale: 1.04, backgroundColor: '#1aa34a', boxShadow: '0 6px 20px rgba(37,211,102,0.4)' }}
+            whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: sharing ? 'not-allowed' : 'pointer', opacity: sharing ? 0.7 : 1 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', backgroundColor: WA, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
-            <Share2 size={14} /> {sharing ? 'Gerando...' : 'Compartilhar PNG'}
+            <MessageCircle size={14} /> WhatsApp
           </motion.button>
 
           {status !== 'PAGO' && (
@@ -279,6 +290,90 @@ export default function PagamentoDetalheClient() {
           </div>
         </div>
       </motion.div>
+
+      {/* Toast de status WhatsApp */}
+      <AnimatePresence>
+        {waStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}
+            style={{
+              position: 'fixed', bottom: 28, right: 28, zIndex: 2000,
+              backgroundColor: waStatus.ok ? '#f0faf0' : '#fff0f3',
+              border: `1px solid ${waStatus.ok ? GREEN : PINK}40`,
+              color: waStatus.ok ? GREEN : PINK,
+              padding: '12px 18px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+              boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
+            }}
+          >
+            {waStatus.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de confirmação WhatsApp */}
+      <AnimatePresence>
+        {waConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !waSending && setWaConfirm(false)}
+              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1500 }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+              style={{
+                position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                zIndex: 1600, backgroundColor: 'white', borderRadius: 16, padding: 28,
+                width: 'min(420px, 90vw)', boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: `${WA}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageCircle size={18} color={WA} />
+                  </div>
+                  <p style={{ fontWeight: 700, color: NAVY, fontSize: 15, margin: 0 }}>Enviar pelo WhatsApp</p>
+                </div>
+                <button onClick={() => setWaConfirm(false)} disabled={waSending}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 4 }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ backgroundColor: '#f9fafb', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
+                <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 4px' }}>Enviar para</p>
+                <p style={{ fontWeight: 700, color: NAVY, fontSize: 15, margin: '0 0 2px' }}>{produtor.nome}</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{produtor.telefone}</p>
+              </div>
+
+              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 1.6 }}>
+                O comprovante de pagamento será gerado como imagem e enviado via WhatsApp.
+              </p>
+
+              {waStatus && !waStatus.ok && (
+                <p style={{ fontSize: 13, color: PINK, marginBottom: 12, fontWeight: 600 }}>{waStatus.msg}</p>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setWaConfirm(false)} disabled={waSending}
+                  style={{ padding: '9px 18px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: 'white', color: '#6b7280', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Cancelar
+                </button>
+                <motion.button
+                  onClick={enviarWhatsApp} disabled={waSending}
+                  whileHover={!waSending ? { scale: 1.04, backgroundColor: '#1aa34a' } : {}}
+                  whileTap={!waSending ? { scale: 0.96 } : {}}
+                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', backgroundColor: WA, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: waSending ? 'not-allowed' : 'pointer', opacity: waSending ? 0.75 : 1, fontFamily: 'inherit' }}
+                >
+                  <Send size={14} />
+                  {waSending ? 'Enviando...' : 'Confirmar Envio'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
