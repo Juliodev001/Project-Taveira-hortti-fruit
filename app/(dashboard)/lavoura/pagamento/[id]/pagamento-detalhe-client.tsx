@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { ChevronLeft, Printer, CheckCircle, Trash2 } from 'lucide-react'
+import { ChevronLeft, Printer, CheckCircle, Trash2, Share2 } from 'lucide-react'
 import PageSkeleton from '@/components/page-skeleton'
 
 const GREEN = '#5ab952'
@@ -38,6 +38,8 @@ export default function PagamentoDetalheClient() {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const docRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/fechamento/${id}`).then(r => r.json()).then(setFechamento).finally(() => setLoading(false))
@@ -67,6 +69,36 @@ export default function PagamentoDetalheClient() {
     setDeleting(true)
     await fetch(`/api/fechamento/${id}`, { method: 'DELETE' })
     router.push('/lavoura/pagamento')
+  }
+
+  async function compartilharWhatsApp() {
+    if (!docRef.current) return
+    setSharing(true)
+    try {
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(docRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: '#ffffff' })
+      const res = await fetch(dataUrl)
+      const blob = await res.blob()
+      const file = new File([blob], `pagamento-${fechamento?.produtor.nome ?? id}.png`, { type: 'image/png' })
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Pagamento — ${fechamento?.produtor.nome}` })
+      } else {
+        // fallback: baixa a imagem e abre WhatsApp com texto
+        const link = document.createElement('a')
+        link.href = dataUrl
+        link.download = file.name
+        link.click()
+        const texto = encodeURIComponent(
+          `Olá! Segue seu comprovante de pagamento referente ao período de ${fmtDate(fechamento!.dataInicio)} a ${fmtDate(fechamento!.dataFim)}.\nA Receber: ${fmtBRL(aReceber)}`
+        )
+        window.open(`https://wa.me/?text=${texto}`, '_blank')
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name !== 'AbortError') alert('Não foi possível compartilhar. Tente pelo botão Imprimir/PDF.')
+    } finally {
+      setSharing(false)
+    }
   }
 
   return (
@@ -99,6 +131,16 @@ export default function PagamentoDetalheClient() {
             <Printer size={14} /> Imprimir / PDF
           </motion.button>
 
+          <motion.button
+            onClick={compartilharWhatsApp} disabled={sharing}
+            whileHover={!sharing ? { scale: 1.04, backgroundColor: '#1aa34a', boxShadow: '0 6px 20px rgba(37,211,102,0.4)' } : undefined}
+            whileTap={!sharing ? { scale: 0.95 } : undefined}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: sharing ? 'not-allowed' : 'pointer', opacity: sharing ? 0.7 : 1 }}
+          >
+            <Share2 size={14} /> {sharing ? 'Gerando...' : 'Compartilhar PNG'}
+          </motion.button>
+
           {status !== 'PAGO' && (
             <motion.button
               onClick={marcarPago} disabled={marking}
@@ -125,6 +167,7 @@ export default function PagamentoDetalheClient() {
 
       {/* Documento */}
       <motion.div
+        ref={docRef}
         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}
         style={{ backgroundColor: 'white', borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.07)', overflow: 'hidden' }}
       >
