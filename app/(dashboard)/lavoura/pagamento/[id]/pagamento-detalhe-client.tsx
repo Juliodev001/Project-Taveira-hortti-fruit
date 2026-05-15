@@ -81,20 +81,30 @@ export default function PagamentoDetalheClient() {
       const blob = await fetch(dataUrl).then(r => r.blob())
       const file = new File([blob], `pagamento-${produtor.nome.replace(/\s+/g, '-')}.png`, { type: 'image/png' })
 
-      // Mobile: abre o WhatsApp nativo para escolher o contato
+      // Mobile com suporte a Web Share API: abre o share sheet nativo
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: `Pagamento — ${produtor.nome}` })
         return
       }
 
-      // Desktop: baixa o PNG e abre o WhatsApp Web para anexar manualmente
+      // Fallback: baixa o PNG e abre o WhatsApp com o número do produtor
+      const objUrl = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = dataUrl
+      link.href = objUrl
       link.download = file.name
+      document.body.appendChild(link)
       link.click()
-      setTimeout(() => window.open('https://web.whatsapp.com', '_blank'), 600)
+      document.body.removeChild(link)
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000)
+
+      const phone = produtor.telefone?.replace(/\D/g, '')
+      const waTarget = phone
+        ? `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent('Segue o comprovante de pagamento')}`
+        : 'https://web.whatsapp.com'
+      setTimeout(() => window.open(waTarget, '_blank'), 800)
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') return // usuário cancelou
+      if (e instanceof Error && e.name === 'AbortError') return
+      alert('Erro ao gerar a imagem. Tente novamente.')
     } finally {
       setSharing(false)
     }
