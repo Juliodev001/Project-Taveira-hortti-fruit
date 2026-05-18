@@ -1,6 +1,15 @@
-# Taveira Hortti Fruit — Sistema de Gestão
+# Do Campo Alimentos — Sistema de Gestão
 
 Sistema ERP completo desenvolvido como freela para um hortifruti e floricultura. Cobre desde o controle de lavoura e colheita até vendas, financeiro e emissão de NF-e.
+
+**Em produção** — sistema rodando para o cliente.
+
+## Screenshots
+
+![Login](docs/login.png)
+![Dashboard](docs/dashboard.png)
+![Dashboard Lavoura](docs/lavoura.png)
+![Compras e Despesas](docs/compras.png)
 
 ## Módulos
 
